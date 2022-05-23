@@ -43,6 +43,10 @@ namespace cslox
 				foreach (IStmt stmt in statements)
 				{
 					value = Execute(stmt);
+					if (value is LoopBreak lb)
+					{
+						return lb;
+					}
 				}
 			} 
 			finally
@@ -222,6 +226,58 @@ namespace cslox
 		public object? VisitBlockStmt(Block block)
 		{
 			return ExecuteBlock(block.statements, new Environment(env));
+		}
+
+		public object? VisitIfStmtStmt(IfStmt ifstmt)
+		{
+			if (Truthy(Evaluate(ifstmt.condition)))
+			{
+				return Execute(ifstmt.then);
+			} 
+			else if (ifstmt.elseDo != null)
+			{
+				return Execute(ifstmt.elseDo);
+			}
+
+			return null;
+		}
+
+		public object? VisitLogicalExpr(Logical logical)
+		{
+			object? left = Evaluate(logical.left);
+
+			if (logical.op.type == Token.TokenType.OR)
+			{
+				if (Truthy(left)) return left;
+			}
+			else
+			{
+				if (!Truthy(left)) return left;
+			}
+
+			return Evaluate(logical.right);
+		}
+
+		public object? VisitWhileStmtStmt(WhileStmt whilestmt)
+		{
+			while (Truthy(Evaluate(whilestmt.condition)))
+			{
+				if (Execute(whilestmt.then) is LoopBreak lb)
+					if (lb.type == LoopBreak.LoopBreakType.Break) break;
+					else continue;
+			}
+
+			return null;
+		}
+
+		public object? VisitBreakStmtStmt(BreakStmt breakstmt)
+		{
+			return new LoopBreak(LoopBreak.LoopBreakType.Break);
+		}
+
+		public object? VisitContinueStmtStmt(ContinueStmt continuestmt)
+		{
+			return new LoopBreak(LoopBreak.LoopBreakType.Continue);
 		}
 	}
 

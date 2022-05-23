@@ -24,7 +24,7 @@ namespace cslox
 
 			// Keywords.
 			AND, CLASS, ELSE, FALSE, FUN, FOR, IF, NIL, OR,
-			PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE, MUT,
+			PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE, MUT, BREAK, CONTINUE,
 
 			EOF
 		}
@@ -46,7 +46,9 @@ namespace cslox
 			{ "true", TokenType.TRUE },
 			{ "var", TokenType.VAR },
 			{ "while", TokenType.WHILE },
-			{ "mut", TokenType.MUT }
+			{ "mut", TokenType.MUT },
+			{ "break", TokenType.BREAK },
+			{ "continue", TokenType.CONTINUE },
 		};
 
 		internal TokenType type;

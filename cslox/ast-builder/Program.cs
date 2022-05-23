@@ -13,6 +13,7 @@
 			"Binary   : IExpr left, Token op, IExpr right",
 			"Grouping : IExpr expression",
 			"Literal  : object? value",
+			"Logical  : IExpr left, Token op, IExpr right",
 			"Unary    : Token op, IExpr right",
 			"Variable : Token name"
 		});
@@ -20,13 +21,17 @@
 		DefineAst(outputDir, "Stmt", new List<string>() {
 			"Block		: List<IStmt> statements",
 			"Expression : IExpr expression",
+			"IfStmt		: IExpr condition, IStmt then, IStmt elseDo",
 			"Print      : IExpr expression",
 			"Var        : Token name, IExpr initializer",
-			"VarMut     : Token name, IExpr initializer"
-		});
+			"VarMut     : Token name, IExpr initializer",
+			"WhileStmt	: IExpr condition, IStmt then",
+			"BreakStmt  : ",
+			"ContinueStmt: ",
+		}, new List<string>() { "cslox.Expr" });
 	}
 
-	private static void DefineAst(string outputDir, string baseName, List<string> types)
+	private static void DefineAst(string outputDir, string baseName, List<string> types, List<string>? usings = null)
 	{
 		string path = $"{outputDir}/{baseName}.cs";
 
@@ -34,6 +39,15 @@
 
 		sw.WriteLine("using System.Collections.Generic;");
 		sw.WriteLine("using System;");
+
+		if (usings != null)
+		{
+			foreach (string u in usings)
+			{
+				sw.WriteLine($"using {u};");
+			}
+		}
+
 		sw.WriteLine();
 		sw.WriteLine($"namespace cslox.{baseName}");
 		sw.WriteLine('{');
@@ -50,6 +64,8 @@
 			string className = type.Split(':')[0].Trim();
 			string fields = type.Split(':')[1].Trim();
 
+			if (fields.Length == 0) fields = null;
+
 			DefineType(sw, baseName, className, fields);
 		}
 		sw.WriteLine('}');
@@ -59,23 +75,33 @@
 
 	}
 
-	private static void DefineType(StreamWriter sw, string baseName, string className, string fieldList)
+	private static void DefineType(StreamWriter sw, string baseName, string className, string? fieldList)
 	{
 		sw.WriteLine($"\tinternal class {className} : I{baseName}");
 		sw.WriteLine("\t{");
-		string[] fields = fieldList.Split(", ");
 
-		foreach (string field in fields)
+		if (fieldList != null)
 		{
-			sw.WriteLine($"\t\tinternal {field};");
+			string[] fields = fieldList.Split(", ");
+
+			foreach (string field in fields)
+			{
+				sw.WriteLine($"\t\tinternal {field};");
+			}
 		}
 
 		sw.WriteLine($"\t\tinternal {className}({fieldList})");
 		sw.WriteLine("\t\t{");
-		foreach (string field in fields)
+
+		if (fieldList != null)
 		{
-			string name = field.Split(' ')[1];
-			sw.WriteLine($"\t\t\tthis.{name} = {name};");
+			string[] fields = fieldList.Split(", ");
+
+			foreach (string field in fields)
+			{
+				string name = field.Split(' ')[1];
+				sw.WriteLine($"\t\t\tthis.{name} = {name};");
+			}
 		}
 		sw.WriteLine("\t\t}");
 

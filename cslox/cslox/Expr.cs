@@ -13,6 +13,7 @@ namespace cslox.Expr
 		R VisitBinaryExpr(Binary binary);
 		R VisitGroupingExpr(Grouping grouping);
 		R VisitLiteralExpr(Literal literal);
+		R VisitLogicalExpr(Logical logical);
 		R VisitUnaryExpr(Unary unary);
 		R VisitVariableExpr(Variable variable);
 	}
@@ -57,6 +58,19 @@ namespace cslox.Expr
 			this.value = value;
 		}
 		public R Accept<R>(IExprVisitor<R> visitor) => visitor.VisitLiteralExpr(this);
+	}
+	internal class Logical : IExpr
+	{
+		internal IExpr left;
+		internal Token op;
+		internal IExpr right;
+		internal Logical(IExpr left, Token op, IExpr right)
+		{
+			this.left = left;
+			this.op = op;
+			this.right = right;
+		}
+		public R Accept<R>(IExprVisitor<R> visitor) => visitor.VisitLogicalExpr(this);
 	}
 	internal class Unary : IExpr
 	{

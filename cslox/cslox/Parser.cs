@@ -69,12 +69,13 @@ namespace cslox
 
 		private IStmt Statement()
 		{
-			if (Match(Token.TokenType.PRINT))
-			{
-				return PrintStatement();
-			}
-
-			if (Match(Token.TokenType.LEFT_BRACE)) return BlockStatement();
+			if (Match(Token.TokenType.FOR)) return ForStatement();
+			if (Match(Token.TokenType.BREAK)) return BreakStatement();
+			if (Match(Token.TokenType.CONTINUE)) return ContinueStatement();
+			if (Match(Token.TokenType.IF)) return IfStatement();
+			if (Match(Token.TokenType.PRINT)) return PrintStatement();
+			if (Match(Token.TokenType.WHILE)) return WhileStatement();
+			if (Check(Token.TokenType.LEFT_BRACE)) return BlockStatement();
 
 			return ExpressionStatement();
 		}
@@ -96,6 +97,7 @@ namespace cslox
 		private IStmt BlockStatement()
 		{
 			List<IStmt> statements = new List<IStmt>();
+			Consume(Token.TokenType.LEFT_BRACE, "Missing an opening '{' in block");
 
 			while (!Check(Token.TokenType.RIGHT_BRACE) && !IsAtEnd())
 			{
@@ -106,6 +108,101 @@ namespace cslox
 			return new Block(statements);
 		}
 
+		private IStmt IfStatement()
+		{
+			IExpr condition = Expression();
+
+			IStmt then = BlockStatement();
+
+			IStmt elseDo = null;
+
+			if (Match(Token.TokenType.ELSE))
+			{
+				if (Match(Token.TokenType.IF))
+				{
+					elseDo = IfStatement();
+				}
+				else 
+					elseDo = BlockStatement();
+			}
+
+			return new IfStmt(condition, then, elseDo);
+		}
+
+		private IStmt WhileStatement()
+		{
+			IExpr condition = Expression();
+
+			IStmt then = BlockStatement();
+
+			return new WhileStmt(condition, then);
+		}
+
+		private IStmt ForStatement()
+		{
+			Consume(Token.TokenType.LEFT_PAREN, "Expected '(' after for keyword.");
+
+			IStmt initializer;
+
+			if (Match(Token.TokenType.SEMICOLON))
+			{
+				initializer = null;
+			} 
+			else if (Match(Token.TokenType.VAR))
+			{
+				initializer = VarDeclaration();
+			}
+			else
+			{
+				initializer = ExpressionStatement();
+			}
+
+			IExpr condition = null;
+			
+			if (!Check(Token.TokenType.SEMICOLON))
+			{
+				condition = Expression();
+			}
+
+			Consume(Token.TokenType.SEMICOLON, "Expected ';' after loop condition.");
+
+			IExpr increment = null;
+
+			if (!Check(Token.TokenType.RIGHT_PAREN))
+			{
+				increment = Expression();
+			}
+
+			Consume(Token.TokenType.RIGHT_PAREN, "Expected closing ')' after for clause.");
+
+			IStmt body = BlockStatement();
+
+			if (increment != null)
+				body = new Block(new List<IStmt>() { body, new Expression(increment) });
+
+			if (condition == null)
+				condition = new Literal(true);
+			
+			body = new WhileStmt(condition, body);
+
+			if (initializer != null)
+				body = new Block(new List<IStmt>() { initializer, body });
+
+			return body;
+		}
+
+		private IStmt BreakStatement()
+		{
+			Consume(Token.TokenType.SEMICOLON, "Expected ';' after statement.");
+			return new BreakStmt();
+		}
+
+		private IStmt ContinueStatement()
+		{
+			Consume(Token.TokenType.SEMICOLON, "Expected ';' after statement.");
+			return new ContinueStmt();
+		}
+
 		private IExpr Expression()
 		{
 			return Assignment();
@@ -113,7 +210,7 @@ namespace cslox
 
 		private IExpr Assignment()
 		{
-			IExpr expr = Equality();
+			IExpr expr = Or();
 
 			if (Match(Token.TokenType.EQUAL))
 			{
@@ -127,6 +224,34 @@ namespace cslox
 				}
 
 				Error(equals, "Invalid assignment target.");
+			}
+
+			return expr;
+		}
+
+		private IExpr Or()
+		{
+			IExpr expr = And();
+
+			while (Match(Token.TokenType.OR))
+			{
+				Token op = Previous();
+				IExpr right = And();
+				expr = new Logical(expr, op, right);
+			}
+
+			return expr;
+		}
+
+		private IExpr And()
+		{
+			IExpr expr = Equality();
+
+			while (Match(Token.TokenType.AND))
+			{
+				Token op = Previous();
+				IExpr right = Equality();
+				expr = new Logical(expr, op, right);
 			}
 
 			return expr;

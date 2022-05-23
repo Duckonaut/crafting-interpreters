@@ -134,6 +134,16 @@ namespace cslox
 			return WrapInParentheses("block", block.statements.ToArray());
 		}
 
+		public string VisitBreakStmtStmt(BreakStmt breakstmt)
+		{
+			return "break";
+		}
+
+		public string VisitContinueStmtStmt(ContinueStmt continuestmt)
+		{
+			return "continue";
+		}
+
 		public string VisitExpressionStmt(Expression expression)
 		{
 			return expression.expression.Accept(this);
@@ -144,10 +154,21 @@ namespace cslox
 			return WrapInParentheses("group", grouping.expression);
 		}
 
+		public string VisitIfStmtStmt(IfStmt ifstmt)
+		{
+			return $"(if ({ifstmt.condition.Accept(this)}) (then {ifstmt.then.Accept(this)}) (else {ifstmt.elseDo?.Accept(this)}))";
+		}
+
 		public string VisitLiteralExpr(Literal literal)
 		{
 			if (literal.value is string s) return $"\"{s}\"";
+			if (literal.value == null) return "nil";
 			return literal?.value.ToString();
+		}
+
+		public string VisitLogicalExpr(Logical logical)
+		{
+			return WrapInParentheses(logical.op.lexeme, logical.left, logical.right);
 		}
 
 		public string VisitPrintStmt(Print print)
@@ -175,6 +196,11 @@ namespace cslox
 			return WrapInParentheses($"(var {var.name.lexeme})", var.initializer);
 		}
 
+		public string VisitWhileStmtStmt(WhileStmt whilestmt)
+		{
+			return WrapInParentheses($"while ({whilestmt.condition})", whilestmt.then);
+		}
+
 		private string WrapInParentheses(string name, params IExpr[] args)
 		{
 			StringBuilder sb = new();
@@ -184,7 +210,10 @@ namespace cslox
 			foreach (var arg in args)
 			{
 				sb.Append(' ');
-				sb.Append(arg.Accept(this));
+				if (arg == null)
+					sb.Append("nil");
+				else
+					sb.Append(arg.Accept(this));
 			}
 
 			sb.Append(")");

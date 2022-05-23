@@ -60,7 +60,7 @@ namespace cslox
 
 		public bool Mutable(Token name)
 		{
-			return Defined(name) && values[name.lexeme].mutable;
+			return (Defined(name) && values[name.lexeme].mutable) || (enclosing != null && enclosing.Mutable(name));
 		}
 	}
 

@@ -1,7 +1,8 @@
 {
   "profiles": {
     "ast-builder": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "C:\\Users\\hasoh\\source\\repos\\crafting-interpreters\\cslox\\cslox"
     },
     "WSL": {
       "commandName": "WSL2",
