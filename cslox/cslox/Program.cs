@@ -1,10 +1,14 @@
-﻿using System.Diagnostics;
+﻿using cslox.Expr;
+using System.Diagnostics;
+using System.Text;
 
 namespace cslox
 {
 	public class Program
 	{
+		static Interpreter interpreter  = new Interpreter();
 		static bool hadError = false;
+		static bool hadRuntimeError = false;
 
 		static string? currentSource;
 
@@ -32,6 +36,7 @@ namespace cslox
 			Run(s);
 
 			if (hadError) Environment.Exit(65);
+			if (hadRuntimeError) Environment.Exit(70);
 		}
 
 		private static void RunPrompt()
@@ -51,6 +56,15 @@ namespace cslox
 		{
 			Lexer lexer = new(source);
 			List<Token> tokens = lexer.GetTokens();
+
+			Parser parser = new Parser(tokens);
+			IExpr expression = parser.Parse();
+
+			if (hadError) return;
+
+			Console.WriteLine(new AstPrinter().Print(expression));
+
+			interpreter.Interpret(expression);
 		}
 
 		public static void Error(int line, string message)
@@ -63,6 +77,12 @@ namespace cslox
 		{
 			Report(line, currentSource.Split('\n')[line - 1], charInLine, message);
 			hadError = true;
+		}
+
+		internal static void RuntimeError(RuntimeError err)
+		{
+			Console.Error.WriteLine($"{err.Message} [line {err.token.line} at {err.token.lexeme}]");
+			hadRuntimeError = true;
 		}
 
 		private static void Report(int line, string where, int charInLine, string message)
@@ -83,6 +103,51 @@ namespace cslox
 			Console.ForegroundColor = ConsoleColor.White;
 
 			Console.Error.WriteLine(message);
+		}
+	}
+
+	class AstPrinter : Expr.IExprVisitor<String>
+	{
+		public string Print(IExpr expr)
+		{
+			return expr.Accept(this);
+		}
+
+		public string VisitBinaryExpr(Binary binary)
+		{
+			return WrapInParentheses(binary.op.lexeme, binary.left, binary.right);
+		}
+
+		public string VisitGroupingExpr(Grouping grouping)
+		{
+			return WrapInParentheses("group", grouping.expression);
+		}
+
+		public string VisitLiteralExpr(Literal literal)
+		{
+			if (literal.value is string s) return $"\"{s}\"";
+			return literal?.value.ToString();
+		}
+
+		public string VisitUnaryExpr(Unary unary)
+		{
+			return WrapInParentheses(unary.op.lexeme, unary.right);
+		}
+
+		private string WrapInParentheses(string name, params IExpr[] args)
+		{
+			StringBuilder sb = new();
+			sb.Append("(");
+			sb.Append(name);
+
+			foreach (var arg in args)
+			{
+				sb.Append(' ');
+				sb.Append(arg.Accept(this));
+			}
+
+			sb.Append(")");
+			return sb.ToString();
 		}
 	}
 }	

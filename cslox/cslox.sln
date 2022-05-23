@@ -5,6 +5,8 @@ VisualStudioVersion = 17.1.32328.378
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cslox", "cslox\cslox.csproj", "{FD5F88EF-F3DF-4DCE-A6D9-47BC2028D83E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ast-builder", "ast-builder\ast-builder.csproj", "{CF7D581D-DCA9-494B-8DA3-024A4B11010E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{FD5F88EF-F3DF-4DCE-A6D9-47BC2028D83E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FD5F88EF-F3DF-4DCE-A6D9-47BC2028D83E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FD5F88EF-F3DF-4DCE-A6D9-47BC2028D83E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CF7D581D-DCA9-494B-8DA3-024A4B11010E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF7D581D-DCA9-494B-8DA3-024A4B11010E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF7D581D-DCA9-494B-8DA3-024A4B11010E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF7D581D-DCA9-494B-8DA3-024A4B11010E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

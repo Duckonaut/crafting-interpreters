@@ -168,7 +168,7 @@ namespace cslox
 
 			Advance();
 
-			string value = source.Substring(start + 1, current - start - 1);
+			string value = source.Substring(start + 1, current - start - 2);
 			value = value
 				.Replace("\\n", "\n")
 				.Replace("\\t", "\t")
