@@ -9,10 +9,20 @@
 		}
 		string outputDir = args[0];
 		DefineAst(outputDir, "Expr", new List<string>() {
+			"Assign   : Token name, IExpr value",
 			"Binary   : IExpr left, Token op, IExpr right",
 			"Grouping : IExpr expression",
 			"Literal  : object? value",
-			"Unary    : Token op, IExpr right"
+			"Unary    : Token op, IExpr right",
+			"Variable : Token name"
+		});
+
+		DefineAst(outputDir, "Stmt", new List<string>() {
+			"Block		: List<IStmt> statements",
+			"Expression : IExpr expression",
+			"Print      : IExpr expression",
+			"Var        : Token name, IExpr initializer",
+			"VarMut     : Token name, IExpr initializer"
 		});
 	}
 

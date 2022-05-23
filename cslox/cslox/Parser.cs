@@ -1,4 +1,5 @@
 ﻿using cslox.Expr;
+using cslox.Stmt;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,21 +18,118 @@ namespace cslox
 			this.tokens = tokens;
 		}
 
-		internal IExpr Parse()
+		internal List<IStmt> Parse()
+		{
+			List<IStmt> statements =  new List<IStmt>();
+			while (!IsAtEnd())
+			{
+				statements.Add(Declaration());
+			}
+			return statements;
+		}
+
+		private IStmt Declaration()
 		{
 			try
 			{
-				return Expression();
+				if (Match(Token.TokenType.VAR)) return VarDeclaration();
+
+				return Statement();
 			}
-			catch (ParseError pe)
+			catch (ParseError e)
 			{
+				Synchronize();
 				return null;
 			}
 		}
 
+		private IStmt VarDeclaration()
+		{
+			bool mutable = false;
+
+			if (Match(Token.TokenType.MUT)) mutable = true;
+
+			Token name = Consume(Token.TokenType.IDENTIFIER, "Expected variable name.");
+
+			IExpr initializer = null;
+
+			if (Match(Token.TokenType.EQUAL))
+			{
+				initializer = Expression();
+			}
+
+			Consume(Token.TokenType.SEMICOLON, "Expected ';' after variable declaration.");
+
+			if (mutable)
+			{
+				return new VarMut(name, initializer);
+			}
+			return new Var(name, initializer);
+		}
+
+		private IStmt Statement()
+		{
+			if (Match(Token.TokenType.PRINT))
+			{
+				return PrintStatement();
+			}
+
+			if (Match(Token.TokenType.LEFT_BRACE)) return BlockStatement();
+
+			return ExpressionStatement();
+		}
+
+		private IStmt ExpressionStatement()
+		{
+			IExpr value = Expression();
+			Consume(Token.TokenType.SEMICOLON, "Expected ';' after statement.");
+			return new Expression(value);
+		}
+
+		private IStmt PrintStatement()
+		{
+			IExpr value = Expression();
+			Consume(Token.TokenType.SEMICOLON, "Expected ';' after statement.");
+			return new Print(value);
+		}
+
+		private IStmt BlockStatement()
+		{
+			List<IStmt> statements = new List<IStmt>();
+
+			while (!Check(Token.TokenType.RIGHT_BRACE) && !IsAtEnd())
+			{
+				statements.Add(Declaration());
+			}
+
+			Consume(Token.TokenType.RIGHT_BRACE, "Expected a closing '}'");
+			return new Block(statements);
+		}
+
 		private IExpr Expression()
 		{
-			return Equality();
+			return Assignment();
+		}
+
+		private IExpr Assignment()
+		{
+			IExpr expr = Equality();
+
+			if (Match(Token.TokenType.EQUAL))
+			{
+				Token equals = Previous();
+				IExpr value = Assignment();
+
+				if (expr is Variable v)
+				{
+					Token name = v.name;
+					return new Assign(name, value);
+				}
+
+				Error(equals, "Invalid assignment target.");
+			}
+
+			return expr;
 		}
 
 		private IExpr Equality()
@@ -118,6 +216,11 @@ namespace cslox
 				IExpr expr = Expression();
 				Consume(Token.TokenType.RIGHT_PAREN, "Expected ')' after the expression.");
 				return new Grouping(expr);
+			}
+
+			if (Match(Token.TokenType.IDENTIFIER))
+			{
+				return new Variable(Previous());
 			}
 
 			throw Error(Peek(), "Expected expression.");
@@ -207,8 +310,8 @@ namespace cslox
 
 	internal class ParseError : Exception
 	{
-		Token token;
-		string message;
+		internal Token token;
+		internal string message;
 
 		public ParseError(Token token, string message)
 		{

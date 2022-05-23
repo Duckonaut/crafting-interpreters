@@ -1,4 +1,5 @@
 ﻿using cslox.Expr;
+using cslox.Stmt;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,19 +8,49 @@ using System.Threading.Tasks;
 
 namespace cslox
 {
-	internal class Interpreter : IExprVisitor<object?>
+	internal class Interpreter : IExprVisitor<object?>, IStmtVisitor<object?>
 	{
-		public void Interpret(IExpr expression)
+		private Environment env = new Environment();
+
+		public void Interpret(List<IStmt> statements)
 		{
 			try
 			{
-				object? value = Evaluate(expression);
-				Console.WriteLine(Stringify(value));
+				foreach (IStmt stmt in statements)
+				{
+					Execute(stmt);
+				}
 			}
 			catch (RuntimeError ex)
 			{
 				Program.RuntimeError(ex);
 			}
+		}
+
+		public object? Execute(IStmt stmt)
+		{
+			return stmt.Accept(this);
+		}
+
+		public object? ExecuteBlock(List<IStmt> statements, Environment newEnvironment)
+		{
+			Environment prev = env;
+			object? value = null;
+			try
+			{
+				env = newEnvironment;
+
+				foreach (IStmt stmt in statements)
+				{
+					value = Execute(stmt);
+				}
+			} 
+			finally
+			{
+				env = prev;
+			}
+
+			return value;
 		}
 
 		private string Stringify(object? obj)
@@ -127,6 +158,70 @@ namespace cslox
 		{
 			foreach (var operand in operands)
 				CheckNumberOperand(op, operand);
+		}
+
+		public object? VisitExpressionStmt(Expression expression)
+		{
+			Evaluate(expression.expression);
+			return null;
+		}
+
+		public object? VisitPrintStmt(Print print)
+		{
+			var value = Evaluate(print.expression);
+			Console.WriteLine(Stringify(value));
+			return null;
+		}
+
+		public object? VisitVarStmt(Var var)
+		{
+			object? value = null;
+			if (var.initializer != null)
+			{
+				value = Evaluate(var.initializer);
+			}
+
+			env.Define(var.name, value);
+			return null;
+		}
+
+		public object? VisitVariableExpr(Variable variable)
+		{
+			return env.Get(variable.name);
+		}
+
+		public object? VisitVarMutStmt(VarMut varmut)
+		{
+			object? value = null;
+			if (varmut.initializer != null)
+			{
+				value = Evaluate(varmut.initializer);
+			}
+
+			env.Define(varmut.name, value, true);
+			return null;
+		}
+
+		public object? VisitAssignExpr(Assign assign)
+		{
+			if (env.Mutable(assign.name))
+			{
+				object? value = null;
+				if (assign.value != null)
+				{
+					value = Evaluate(assign.value);
+				}
+
+				env.Assign(assign.name, value);
+				return null;
+			}
+
+			throw new RuntimeError(assign.name, "Attempted to mutate a variable not marked as 'mut'");
+		}
+
+		public object? VisitBlockStmt(Block block)
+		{
+			return ExecuteBlock(block.statements, new Environment(env));
 		}
 	}
 

@@ -9,10 +9,23 @@ namespace cslox.Expr
 	}
 	internal interface IExprVisitor<R>
 	{
+		R VisitAssignExpr(Assign assign);
 		R VisitBinaryExpr(Binary binary);
 		R VisitGroupingExpr(Grouping grouping);
 		R VisitLiteralExpr(Literal literal);
 		R VisitUnaryExpr(Unary unary);
+		R VisitVariableExpr(Variable variable);
+	}
+	internal class Assign : IExpr
+	{
+		internal Token name;
+		internal IExpr value;
+		internal Assign(Token name, IExpr value)
+		{
+			this.name = name;
+			this.value = value;
+		}
+		public R Accept<R>(IExprVisitor<R> visitor) => visitor.VisitAssignExpr(this);
 	}
 	internal class Binary : IExpr
 	{
@@ -55,5 +68,14 @@ namespace cslox.Expr
 			this.right = right;
 		}
 		public R Accept<R>(IExprVisitor<R> visitor) => visitor.VisitUnaryExpr(this);
+	}
+	internal class Variable : IExpr
+	{
+		internal Token name;
+		internal Variable(Token name)
+		{
+			this.name = name;
+		}
+		public R Accept<R>(IExprVisitor<R> visitor) => visitor.VisitVariableExpr(this);
 	}
 }

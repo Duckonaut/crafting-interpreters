@@ -1,4 +1,5 @@
 ﻿using cslox.Expr;
+using cslox.Stmt;
 using System.Diagnostics;
 using System.Text;
 
@@ -35,8 +36,8 @@ namespace cslox
 			currentSource = s;
 			Run(s);
 
-			if (hadError) Environment.Exit(65);
-			if (hadRuntimeError) Environment.Exit(70);
+			if (hadError) System.Environment.Exit(65);
+			if (hadRuntimeError) System.Environment.Exit(70);
 		}
 
 		private static void RunPrompt()
@@ -58,11 +59,11 @@ namespace cslox
 			List<Token> tokens = lexer.GetTokens();
 
 			Parser parser = new Parser(tokens);
-			IExpr expression = parser.Parse();
+			List<IStmt> expression = parser.Parse();
 
 			if (hadError) return;
-
-			Console.WriteLine(new AstPrinter().Print(expression));
+			foreach (IStmt stmt in expression)
+				Console.WriteLine(new AstPrinter().Print(stmt));
 
 			interpreter.Interpret(expression);
 		}
@@ -106,16 +107,36 @@ namespace cslox
 		}
 	}
 
-	class AstPrinter : Expr.IExprVisitor<String>
+	class AstPrinter : Expr.IExprVisitor<String>, IStmtVisitor<String>
 	{
 		public string Print(IExpr expr)
 		{
 			return expr.Accept(this);
 		}
 
+		public string Print(IStmt stmt)
+		{
+			return stmt.Accept(this);
+		}
+
+		public string VisitAssignExpr(Assign assign)
+		{
+			return WrapInParentheses($"(assign {assign.name.lexeme}", assign.value);
+		}
+
 		public string VisitBinaryExpr(Binary binary)
 		{
 			return WrapInParentheses(binary.op.lexeme, binary.left, binary.right);
+		}
+
+		public string VisitBlockStmt(Block block)
+		{
+			return WrapInParentheses("block", block.statements.ToArray());
+		}
+
+		public string VisitExpressionStmt(Expression expression)
+		{
+			return expression.expression.Accept(this);
 		}
 
 		public string VisitGroupingExpr(Grouping grouping)
@@ -129,12 +150,48 @@ namespace cslox
 			return literal?.value.ToString();
 		}
 
+		public string VisitPrintStmt(Print print)
+		{
+			return WrapInParentheses("print", print.expression);
+		}
+
 		public string VisitUnaryExpr(Unary unary)
 		{
 			return WrapInParentheses(unary.op.lexeme, unary.right);
 		}
 
+		public string VisitVariableExpr(Variable variable)
+		{
+			return $"(variable {variable.name.lexeme})";
+		}
+
+		public string VisitVarMutStmt(VarMut varmut)
+		{
+			return WrapInParentheses($"(var mut {varmut.name.lexeme})", varmut.initializer);
+		}
+
+		public string VisitVarStmt(Var var)
+		{
+			return WrapInParentheses($"(var {var.name.lexeme})", var.initializer);
+		}
+
 		private string WrapInParentheses(string name, params IExpr[] args)
+		{
+			StringBuilder sb = new();
+			sb.Append("(");
+			sb.Append(name);
+
+			foreach (var arg in args)
+			{
+				sb.Append(' ');
+				sb.Append(arg.Accept(this));
+			}
+
+			sb.Append(")");
+			return sb.ToString();
+		}
+
+		private string WrapInParentheses(string name, params IStmt[] args)
 		{
 			StringBuilder sb = new();
 			sb.Append("(");
