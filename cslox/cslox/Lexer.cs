@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace cslox
@@ -15,6 +16,11 @@ namespace cslox
 		private int current;
 		private int line;
 		private int lineStart;
+
+		private readonly Regex newlineReplacerRegex = new Regex(@"(^|[^\\])(\\n)");
+		private readonly Regex tabReplacerRegex = new Regex(@"(^|[^\\])(\\t)");
+		private readonly Regex backslashReplacerRegex = new Regex(@"(\\\\)");
+
 		internal Lexer(string source)
 		{
 			this.source = source;
@@ -169,10 +175,9 @@ namespace cslox
 			Advance();
 
 			string value = source.Substring(start + 1, current - start - 2);
-			value = value
-				.Replace("\\n", "\n")
-				.Replace("\\t", "\t")
-				.Replace("\\0", "\0");
+			value = backslashReplacerRegex.Replace(
+							tabReplacerRegex.Replace(
+								newlineReplacerRegex.Replace(value, m => m.Groups[1].Value + "\n"), m => m.Groups[1].Value + "\t"), "\\");
 			AddToken(Token.TokenType.STRING, value);
 		}
 

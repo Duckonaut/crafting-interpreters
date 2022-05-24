@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace cslox
@@ -60,6 +61,12 @@ namespace cslox
 		private string Stringify(object? obj)
 		{
 			if (obj == null) return "nil";
+
+			if (obj is string s)
+			{
+				return s;
+			}
+			
 
 			return obj.ToString();
 		}
