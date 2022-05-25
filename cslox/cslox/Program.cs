@@ -198,7 +198,7 @@ namespace cslox
 
 		public string VisitWhileStmtStmt(WhileStmt whilestmt)
 		{
-			return WrapInParentheses($"while ({whilestmt.condition})", whilestmt.then);
+			return WrapInParentheses($"while ({whilestmt.condition.Accept(this)})", whilestmt.then);
 		}
 
 		private string WrapInParentheses(string name, params IExpr[] args)
