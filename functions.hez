@@ -1,0 +1,25 @@
+fn recursiveCountDown(current) { 
+    println(show(current) + "!");
+    if (current > 0) {
+        recursiveCountDown(current - 1);
+    }
+}
+
+var a = 10;
+
+recursiveCountDown(a);
+
+fn wrapInParentheses(x) {
+    return "(" + show(x) + ")";
+}
+
+fn wrapInBraces(x) {
+    return "{" + show(x) + "}";
+}
+
+fn applyToString(func, s) {
+    return func(s);
+}
+
+println(applyToString(wrapInBraces, "braces"));
+println(applyToString(wrapInParentheses, "parentheses"));

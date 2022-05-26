@@ -12,11 +12,12 @@ namespace cslox.Stmt
 	{
 		R VisitBlockStmt(Block block);
 		R VisitExpressionStmt(Expression expression);
+		R VisitFunctionStmt(Function function);
 		R VisitIfStmtStmt(IfStmt ifstmt);
-		R VisitPrintStmt(Print print);
 		R VisitVarStmt(Var var);
 		R VisitVarMutStmt(VarMut varmut);
 		R VisitWhileStmtStmt(WhileStmt whilestmt);
+		R VisitReturnStmtStmt(ReturnStmt returnstmt);
 		R VisitBreakStmtStmt(BreakStmt breakstmt);
 		R VisitContinueStmtStmt(ContinueStmt continuestmt);
 	}
@@ -38,6 +39,19 @@ namespace cslox.Stmt
 		}
 		public R Accept<R>(IStmtVisitor<R> visitor) => visitor.VisitExpressionStmt(this);
 	}
+	internal class Function : IStmt
+	{
+		internal Token name;
+		internal List<Token> parameters;
+		internal IStmt body;
+		internal Function(Token name, List<Token> parameters, IStmt body)
+		{
+			this.name = name;
+			this.parameters = parameters;
+			this.body = body;
+		}
+		public R Accept<R>(IStmtVisitor<R> visitor) => visitor.VisitFunctionStmt(this);
+	}
 	internal class IfStmt : IStmt
 	{
 		internal IExpr condition;
@@ -50,15 +64,6 @@ namespace cslox.Stmt
 			this.elseDo = elseDo;
 		}
 		public R Accept<R>(IStmtVisitor<R> visitor) => visitor.VisitIfStmtStmt(this);
-	}
-	internal class Print : IStmt
-	{
-		internal IExpr expression;
-		internal Print(IExpr expression)
-		{
-			this.expression = expression;
-		}
-		public R Accept<R>(IStmtVisitor<R> visitor) => visitor.VisitPrintStmt(this);
 	}
 	internal class Var : IStmt
 	{
@@ -92,6 +97,17 @@ namespace cslox.Stmt
 			this.then = then;
 		}
 		public R Accept<R>(IStmtVisitor<R> visitor) => visitor.VisitWhileStmtStmt(this);
+	}
+	internal class ReturnStmt : IStmt
+	{
+		internal Token keyword;
+		internal IExpr? toReturn;
+		internal ReturnStmt(Token keyword, IExpr? toReturn)
+		{
+			this.keyword = keyword;
+			this.toReturn = toReturn;
+		}
+		public R Accept<R>(IStmtVisitor<R> visitor) => visitor.VisitReturnStmtStmt(this);
 	}
 	internal class BreakStmt : IStmt
 	{

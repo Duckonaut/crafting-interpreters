@@ -139,6 +139,11 @@ namespace cslox
 			return "break";
 		}
 
+		public string VisitCallExpr(Call call)
+		{
+			return $"(call callee: {call.callee.Accept(this)} {WrapInParentheses("arguments", call.arguments.ToArray())})";
+		}
+
 		public string VisitContinueStmtStmt(ContinueStmt continuestmt)
 		{
 			return "continue";
@@ -147,6 +152,15 @@ namespace cslox
 		public string VisitExpressionStmt(Expression expression)
 		{
 			return expression.expression.Accept(this);
+		}
+
+		public string VisitFunctionStmt(Function function)
+		{
+			var s = $"(function name: {function.name.lexeme}";
+			if (function.parameters.Count > 0)
+				s += $"(parameters {function.parameters.Select(t => t.lexeme).Aggregate((s, p) => s += " " + p)})";
+			s += $" {function.body.Accept(this)})";
+			return s;
 		}
 
 		public string VisitGroupingExpr(Grouping grouping)
@@ -171,9 +185,9 @@ namespace cslox
 			return WrapInParentheses(logical.op.lexeme, logical.left, logical.right);
 		}
 
-		public string VisitPrintStmt(Print print)
+		public string VisitReturnStmtStmt(ReturnStmt returnstmt)
 		{
-			return WrapInParentheses("print", print.expression);
+			return WrapInParentheses("return", returnstmt.toReturn);
 		}
 
 		public string VisitUnaryExpr(Unary unary)

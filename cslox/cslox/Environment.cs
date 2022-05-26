@@ -15,9 +15,11 @@ namespace cslox
 
 		internal Environment(Environment environment) { enclosing = environment; }
 
-		public void Define(Token name, object? obj, bool mutable = false)
+		public object? Define(Token name, object? obj, bool mutable = false)
 		{
-			values[name.lexeme] = new VariableInstance(obj, mutable, name);
+			var newVar = new VariableInstance(obj, mutable, name);
+			values[name.lexeme] = newVar;
+			return newVar;
 		}
 
 		public void Assign(Token name, object? newValue)

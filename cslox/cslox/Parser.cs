@@ -32,6 +32,7 @@ namespace cslox
 		{
 			try
 			{
+				if (Match(Token.TokenType.FN)) return FunctionDeclaration("function");
 				if (Match(Token.TokenType.VAR)) return VarDeclaration();
 
 				return Statement();
@@ -67,14 +68,41 @@ namespace cslox
 			return new Var(name, initializer);
 		}
 
+		private IStmt FunctionDeclaration(string kind)
+		{
+			Token name = Consume(Token.TokenType.IDENTIFIER, $"Expected {kind} name.");
+
+			Consume(Token.TokenType.LEFT_PAREN, $"Expected '(' after {kind} name.");
+
+			List<Token> parameters = new List<Token>();
+			if (!Check(Token.TokenType.RIGHT_PAREN))
+			{
+				do
+				{
+					if (parameters.Count >= 255)
+					{
+						Error(Peek(), "Can't have more than 255 parameters.");
+					}
+
+					parameters.Add(Consume(Token.TokenType.IDENTIFIER, "Expected parameter name."));
+				} while (Match(Token.TokenType.COMMA));
+			}
+
+			Consume(Token.TokenType.RIGHT_PAREN, $"Expected closing ')' after {kind} parameters.");
+
+			IStmt body = BlockStatement();
+
+			return new Function(name, parameters, body);
+		}
+
 		private IStmt Statement()
 		{
-			if (Match(Token.TokenType.FOR)) return ForStatement();
+			if (Match(Token.TokenType.RETURN)) return ReturnStatement();
 			if (Match(Token.TokenType.BREAK)) return BreakStatement();
 			if (Match(Token.TokenType.CONTINUE)) return ContinueStatement();
 			if (Match(Token.TokenType.IF)) return IfStatement();
-			if (Match(Token.TokenType.PRINT)) return PrintStatement();
 			if (Match(Token.TokenType.WHILE)) return WhileStatement();
+			if (Match(Token.TokenType.FOR)) return ForStatement();
 			if (Check(Token.TokenType.LEFT_BRACE)) return BlockStatement();
 
 			return ExpressionStatement();
@@ -85,13 +113,6 @@ namespace cslox
 			IExpr value = Expression();
 			Consume(Token.TokenType.SEMICOLON, "Expected ';' after statement.");
 			return new Expression(value);
-		}
-
-		private IStmt PrintStatement()
-		{
-			IExpr value = Expression();
-			Consume(Token.TokenType.SEMICOLON, "Expected ';' after statement.");
-			return new Print(value);
 		}
 
 		private IStmt BlockStatement()
@@ -201,6 +222,18 @@ namespace cslox
 		{
 			Consume(Token.TokenType.SEMICOLON, "Expected ';' after statement.");
 			return new ContinueStmt();
+		}
+
+		private IStmt ReturnStatement()
+		{
+			Token keyword = Previous();
+			IExpr value = null;
+
+			if (!Check(Token.TokenType.SEMICOLON))
+				value = Expression();
+
+			Consume(Token.TokenType.SEMICOLON, "Expected ';' after statement.");
+			return new ReturnStmt(keyword, value);
 		}
 
 		private IExpr Expression()
@@ -322,7 +355,47 @@ namespace cslox
 				return new Unary(op, right);
 			}
 
-			return Primary();
+			return Call();
+		}
+
+		private IExpr Call()
+		{
+			IExpr expr = Primary();
+
+			while (true)
+			{
+				if (Match(Token.TokenType.LEFT_PAREN))
+				{
+					expr = FinishCall(expr);
+				}
+				else
+				{
+					break;
+				}
+			}
+
+			return expr;
+		}
+
+		private IExpr FinishCall(IExpr callee)
+		{
+			List<IExpr> args = new List<IExpr>();
+
+			if (!Check(Token.TokenType.RIGHT_PAREN))
+			{
+				do
+				{
+					if (args.Count >= 255)
+					{
+						Error(Peek(), "Can't have more than 255 arguments.");
+					}
+					args.Add(Expression());
+				} while (Match(Token.TokenType.COMMA));
+			}
+
+			Token paren = Consume(Token.TokenType.RIGHT_PAREN, "Expected ')' after arguments.");
+
+			return new Call(callee, paren, args);
 		}
 
 		private IExpr Primary()
@@ -403,18 +476,16 @@ namespace cslox
 				switch (Peek().type)
 				{
 					case Token.TokenType.CLASS:
-					case Token.TokenType.FUN:
+					case Token.TokenType.FN:
 					case Token.TokenType.VAR:
 					case Token.TokenType.FOR:
 					case Token.TokenType.IF:
 					case Token.TokenType.WHILE:
-					case Token.TokenType.PRINT:
 					case Token.TokenType.RETURN:
 						return;
 				}
+				Advance();
 			}
-
-			Advance();
 		}
 
 		private bool IsAtEnd()

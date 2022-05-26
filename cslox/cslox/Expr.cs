@@ -11,6 +11,7 @@ namespace cslox.Expr
 	{
 		R VisitAssignExpr(Assign assign);
 		R VisitBinaryExpr(Binary binary);
+		R VisitCallExpr(Call call);
 		R VisitGroupingExpr(Grouping grouping);
 		R VisitLiteralExpr(Literal literal);
 		R VisitLogicalExpr(Logical logical);
@@ -40,6 +41,19 @@ namespace cslox.Expr
 			this.right = right;
 		}
 		public R Accept<R>(IExprVisitor<R> visitor) => visitor.VisitBinaryExpr(this);
+	}
+	internal class Call : IExpr
+	{
+		internal IExpr callee;
+		internal Token paren;
+		internal List<IExpr> arguments;
+		internal Call(IExpr callee, Token paren, List<IExpr> arguments)
+		{
+			this.callee = callee;
+			this.paren = paren;
+			this.arguments = arguments;
+		}
+		public R Accept<R>(IExprVisitor<R> visitor) => visitor.VisitCallExpr(this);
 	}
 	internal class Grouping : IExpr
 	{

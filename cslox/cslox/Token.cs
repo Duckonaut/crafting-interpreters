@@ -23,10 +23,11 @@ namespace cslox
 			IDENTIFIER, STRING, NUMBER,
 
 			// Keywords.
-			AND, CLASS, ELSE, FALSE, FUN, FOR, IF, NIL, OR,
-			PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE, MUT, BREAK, CONTINUE,
+			AND, CLASS, ELSE, FALSE, FN, FOR, IF, NIL, OR,
+			RETURN, SUPER, THIS, TRUE, VAR, WHILE, MUT, BREAK, CONTINUE,
 
-			EOF
+			EOF,
+			BUILTIN
 		}
 
 		internal static Dictionary<string, TokenType> Keywords = new Dictionary<string, TokenType>() {
@@ -34,12 +35,11 @@ namespace cslox
 			{ "class", TokenType.CLASS },
 			{ "else", TokenType.ELSE },
 			{ "false", TokenType.FALSE },
-			{ "fun", TokenType.FUN },
+			{ "fn", TokenType.FN },
 			{ "for", TokenType.FOR },
 			{ "if", TokenType.IF },
 			{ "nil", TokenType.NIL },
 			{ "or", TokenType.OR },
-			{ "print", TokenType.PRINT },
 			{ "return", TokenType.RETURN },
 			{ "super", TokenType.SUPER },
 			{ "this", TokenType.THIS },

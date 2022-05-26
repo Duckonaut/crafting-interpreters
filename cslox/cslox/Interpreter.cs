@@ -11,7 +11,34 @@ namespace cslox
 {
 	internal class Interpreter : IExprVisitor<object?>, IStmtVisitor<object?>
 	{
-		private Environment env = new Environment();
+		internal Environment globals = new Environment();
+		private Environment env;
+
+		public Interpreter()
+		{
+			env = globals;
+			globals.Define(new Token(Token.TokenType.BUILTIN, "clock", null, -1), new NativeLoxCallable(0, (i, args) =>
+			{
+				return (double)DateTimeOffset.Now.ToUnixTimeMilliseconds();
+			}));
+
+			globals.Define(new Token(Token.TokenType.BUILTIN, "print", null, -1), new NativeLoxCallable(1, (i, args) =>
+			{
+				Console.Write(args[0]);
+				return null;
+			}));
+
+			globals.Define(new Token(Token.TokenType.BUILTIN, "println", null, -1), new NativeLoxCallable(1, (i, args) =>
+			{
+				Console.WriteLine(args[0]);
+				return null;
+			}));
+
+			globals.Define(new Token(Token.TokenType.BUILTIN, "show", null, -1), new NativeLoxCallable(1, (i, args) =>
+			{
+				return args[0].ToString();
+			}));
+		}
 
 		public void Interpret(List<IStmt> statements)
 		{
@@ -44,10 +71,6 @@ namespace cslox
 				foreach (IStmt stmt in statements)
 				{
 					value = Execute(stmt);
-					if (value is LoopBreak lb)
-					{
-						return lb;
-					}
 				}
 			} 
 			finally
@@ -138,6 +161,25 @@ namespace cslox
 			return null;
 		}
 
+		public object? VisitCallExpr(Call call)
+		{
+			object? callee = Evaluate(call.callee);
+
+			List<object?> arguments = new List<object?>();
+
+			if (call.arguments != null)
+			{
+				foreach (var arg in call.arguments)
+					arguments.Add(Evaluate(arg));
+			}
+			if (callee is ILoxCallable lc)
+			{
+				return lc.Call(this, arguments);
+			}
+
+			throw new RuntimeError(call.paren, "Callee is not a callable object!");
+		}
+
 		private object? Evaluate(IExpr expr)
 		{
 			return expr.Accept(this);
@@ -177,13 +219,6 @@ namespace cslox
 			return null;
 		}
 
-		public object? VisitPrintStmt(Print print)
-		{
-			var value = Evaluate(print.expression);
-			Console.WriteLine(Stringify(value));
-			return null;
-		}
-
 		public object? VisitVarStmt(Var var)
 		{
 			object? value = null;
@@ -211,6 +246,13 @@ namespace cslox
 
 			env.Define(varmut.name, value, true);
 			return null;
+		}
+
+		public object? VisitFunctionStmt(Function function)
+		{
+			LoxFunction loxFunction = new LoxFunction(function);
+			env.Define(function.name, loxFunction);
+			return env.Define(function.name, loxFunction);
 		}
 
 		public object? VisitAssignExpr(Assign assign)
@@ -269,9 +311,15 @@ namespace cslox
 		{
 			while (Truthy(Evaluate(whilestmt.condition)))
 			{
-				if (Execute(whilestmt.then) is LoopBreak lb)
-					if (lb.type == LoopBreak.LoopBreakType.Break) break;
+				try
+				{
+					Execute(whilestmt.then);
+				}
+				catch (LoopBreakException lb)
+				{
+					if (lb.type == LoopBreakException.LoopBreakType.Break) break;
 					else continue;
+				}
 			}
 
 			return null;
@@ -279,12 +327,18 @@ namespace cslox
 
 		public object? VisitBreakStmtStmt(BreakStmt breakstmt)
 		{
-			return new LoopBreak(LoopBreak.LoopBreakType.Break);
+			throw new LoopBreakException(LoopBreakException.LoopBreakType.Break);
 		}
 
 		public object? VisitContinueStmtStmt(ContinueStmt continuestmt)
 		{
-			return new LoopBreak(LoopBreak.LoopBreakType.Continue);
+			throw new LoopBreakException(LoopBreakException.LoopBreakType.Continue);
+		}
+
+		public object? VisitReturnStmtStmt(ReturnStmt returnstmt)
+		{
+			if (returnstmt.toReturn == null) return null;
+			throw new ReturnException(Evaluate(returnstmt.toReturn));
 		}
 	}
 

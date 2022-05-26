@@ -11,6 +11,7 @@
 		DefineAst(outputDir, "Expr", new List<string>() {
 			"Assign   : Token name, IExpr value",
 			"Binary   : IExpr left, Token op, IExpr right",
+			"Call	  : IExpr callee, Token paren, List<IExpr> arguments",
 			"Grouping : IExpr expression",
 			"Literal  : object? value",
 			"Logical  : IExpr left, Token op, IExpr right",
@@ -21,11 +22,12 @@
 		DefineAst(outputDir, "Stmt", new List<string>() {
 			"Block		: List<IStmt> statements",
 			"Expression : IExpr expression",
+			"Function	: Token name, List<Token> parameters, IStmt body",
 			"IfStmt		: IExpr condition, IStmt then, IStmt elseDo",
-			"Print      : IExpr expression",
 			"Var        : Token name, IExpr initializer",
 			"VarMut     : Token name, IExpr initializer",
 			"WhileStmt	: IExpr condition, IStmt then",
+			"ReturnStmt : Token keyword, IExpr? toReturn",
 			"BreakStmt  : ",
 			"ContinueStmt: ",
 		}, new List<string>() { "cslox.Expr" });
