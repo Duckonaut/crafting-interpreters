@@ -1,4 +1,4 @@
-var a = "global";
+var mut a = "global";
 {
     fn show_a() {
         fn show_twice(x) {
@@ -10,6 +10,7 @@ var a = "global";
     }
 
     show_a();
+    a = "GET TROLLED";
     var a = "block";
     show_a();
 }

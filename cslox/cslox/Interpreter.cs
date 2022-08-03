@@ -287,11 +287,14 @@ namespace cslox
 
 					env.AssignAt(locals[assign], assign.name, value);
 				}
-				throw new RuntimeError(assign.name, "Attempted to mutate a variable not marked as 'mut'");
+				else
+				{
+					throw new RuntimeError(assign.name, "Attempted to mutate a variable not marked as 'mut'");
+				}
 			}
 			else
 			{
-				if (env.Mutable(assign.name))
+				if (globals.Mutable(assign.name))
 				{
 					object? value = null;
 					if (assign.value != null)
@@ -301,8 +304,13 @@ namespace cslox
 
 					globals.Assign(assign.name, value);
 				}
-				throw new RuntimeError(assign.name, "Attempted to mutate a variable not marked as 'mut'");
+				else
+				{
+					throw new RuntimeError(assign.name, "Attempted to mutate a variable not marked as 'mut'");
+				}
 			}
+
+			return null;
 		}
 
 		public object? VisitBlockStmt(Block block)
