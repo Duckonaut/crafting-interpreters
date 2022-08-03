@@ -1,0 +1,15 @@
+var a = "global";
+{
+    fn show_a() {
+        fn show_twice(x) {
+            println(x);
+            println(x);
+        }
+
+        show_twice(a);
+    }
+
+    show_a();
+    var a = "block";
+    show_a();
+}

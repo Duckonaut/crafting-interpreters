@@ -55,6 +55,34 @@ namespace cslox
 			throw new RuntimeError(name, $"Undefined variable: {name.lexeme}");
 		}
 
+		public object? GetAt(int distance, string name)
+		{
+			return Ancestor(distance).values[name].value;
+		}
+
+		public void AssignAt(int distance, Token name, object? value)
+		{
+			var values = Ancestor(distance).values;
+			VariableInstance var = values[name.lexeme];
+			if (var.mutable)
+			{
+				values[name.lexeme].value = value;
+				return;
+			}
+			throw new RuntimeError(values[name.lexeme].definitionToken, "Cannot mutate a variable not marked as 'mut'");
+		}
+
+		public Environment Ancestor(int distance)
+		{
+			Environment environment = this;
+			for (int i = 0; i < distance; i++)
+			{
+				environment = environment.enclosing;
+			}
+
+			return environment;
+		}
+
 		public bool Defined(Token name)
 		{
 			return values.ContainsKey(name.lexeme);
@@ -63,6 +91,11 @@ namespace cslox
 		public bool Mutable(Token name)
 		{
 			return (Defined(name) && values[name.lexeme].mutable) || (enclosing != null && enclosing.Mutable(name));
+		}
+
+		public bool MutableAt(int distance, Token name)
+		{
+			return Ancestor(distance).Defined(name) && Ancestor(distance).values[name.lexeme].mutable;
 		}
 	}
 

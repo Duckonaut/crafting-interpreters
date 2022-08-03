@@ -20,7 +20,7 @@ namespace cslox
 
 		internal List<IStmt> Parse()
 		{
-			List<IStmt> statements =  new List<IStmt>();
+			List<IStmt> statements = new List<IStmt>();
 			while (!IsAtEnd())
 			{
 				statements.Add(Declaration());
@@ -143,7 +143,7 @@ namespace cslox
 				{
 					elseDo = IfStatement();
 				}
-				else 
+				else
 					elseDo = BlockStatement();
 			}
 
@@ -168,7 +168,7 @@ namespace cslox
 			if (Match(Token.TokenType.SEMICOLON))
 			{
 				initializer = null;
-			} 
+			}
 			else if (Match(Token.TokenType.VAR))
 			{
 				initializer = VarDeclaration();
@@ -179,7 +179,7 @@ namespace cslox
 			}
 
 			IExpr condition = null;
-			
+
 			if (!Check(Token.TokenType.SEMICOLON))
 			{
 				condition = Expression();
@@ -203,7 +203,7 @@ namespace cslox
 
 			if (condition == null)
 				condition = new Literal(true);
-			
+
 			body = new WhileStmt(condition, body);
 
 			if (initializer != null)
@@ -316,7 +316,7 @@ namespace cslox
 			}
 
 			return expr;
- 		}
+		}
 
 		private IExpr Term()
 		{

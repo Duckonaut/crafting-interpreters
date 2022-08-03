@@ -10,16 +10,18 @@ namespace cslox
 	internal class LoxFunction : ILoxCallable
 	{
 		Function declaration;
+		private Environment closure;
 
-		public LoxFunction(Function declaration)
+		public LoxFunction(Function declaration, Environment closure)
 		{
 			this.declaration = declaration;
+			this.closure = closure;
 		}
 
 		public int ArgumentCount => declaration.parameters.Count;
 		public object? Call(Interpreter interpreter, List<object?> args)
 		{
-			Environment environment = new Environment(interpreter.globals);
+			Environment environment = new Environment(closure);
 
 			for (int i = 0; i < declaration.parameters.Count; i++)
 			{

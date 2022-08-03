@@ -13,6 +13,7 @@ namespace cslox
 	{
 		internal Environment globals = new Environment();
 		private Environment env;
+		private Dictionary<IExpr, int> locals = new();
 
 		public Interpreter()
 		{
@@ -72,7 +73,7 @@ namespace cslox
 				{
 					value = Execute(stmt);
 				}
-			} 
+			}
 			finally
 			{
 				env = prev;
@@ -89,7 +90,7 @@ namespace cslox
 			{
 				return s;
 			}
-			
+
 
 			return obj.ToString();
 		}
@@ -127,9 +128,9 @@ namespace cslox
 				case Token.TokenType.LESS_EQUAL:
 					CheckNumberOperands(binary.op, left, right);
 					return (double)left <= (double)right;
-				case Token.TokenType.BANG_EQUAL: 
+				case Token.TokenType.BANG_EQUAL:
 					return !IsEqual(left, right);
-				case Token.TokenType.EQUAL_EQUAL: 
+				case Token.TokenType.EQUAL_EQUAL:
 					return IsEqual(left, right);
 			}
 
@@ -197,7 +198,7 @@ namespace cslox
 		{
 			if (obj1 == null && obj2 == null) return true;
 			if (obj2 == null) return false;
-			
+
 			return obj1.Equals(obj2);
 		}
 
@@ -211,6 +212,23 @@ namespace cslox
 		{
 			foreach (var operand in operands)
 				CheckNumberOperand(op, operand);
+		}
+
+		public void Resolve(IExpr expr, int depth)
+		{
+			locals[expr] = depth;
+		}
+
+		public object? LookUpVariable(Token name, IExpr expr)
+		{
+			if (locals.ContainsKey(expr))
+			{
+				return env.GetAt(locals[expr], name.lexeme);
+			}
+			else
+			{
+				return globals.Get(name);
+			}
 		}
 
 		public object? VisitExpressionStmt(Expression expression)
@@ -233,7 +251,7 @@ namespace cslox
 
 		public object? VisitVariableExpr(Variable variable)
 		{
-			return env.Get(variable.name);
+			return LookUpVariable(variable.name, variable);
 		}
 
 		public object? VisitVarMutStmt(VarMut varmut)
@@ -250,26 +268,41 @@ namespace cslox
 
 		public object? VisitFunctionStmt(Function function)
 		{
-			LoxFunction loxFunction = new LoxFunction(function);
+			LoxFunction loxFunction = new LoxFunction(function, env);
 			env.Define(function.name, loxFunction);
 			return env.Define(function.name, loxFunction);
 		}
 
 		public object? VisitAssignExpr(Assign assign)
 		{
-			if (env.Mutable(assign.name))
+			if (locals.ContainsKey(assign))
 			{
-				object? value = null;
-				if (assign.value != null)
+				if (env.MutableAt(locals[assign], assign.name))
 				{
-					value = Evaluate(assign.value);
+					object? value = null;
+					if (assign.value != null)
+					{
+						value = Evaluate(assign.value);
+					}
+
+					env.AssignAt(locals[assign], assign.name, value);
 				}
-
-				env.Assign(assign.name, value);
-				return null;
+				throw new RuntimeError(assign.name, "Attempted to mutate a variable not marked as 'mut'");
 			}
+			else
+			{
+				if (env.Mutable(assign.name))
+				{
+					object? value = null;
+					if (assign.value != null)
+					{
+						value = Evaluate(assign.value);
+					}
 
-			throw new RuntimeError(assign.name, "Attempted to mutate a variable not marked as 'mut'");
+					globals.Assign(assign.name, value);
+				}
+				throw new RuntimeError(assign.name, "Attempted to mutate a variable not marked as 'mut'");
+			}
 		}
 
 		public object? VisitBlockStmt(Block block)
@@ -282,7 +315,7 @@ namespace cslox
 			if (Truthy(Evaluate(ifstmt.condition)))
 			{
 				return Execute(ifstmt.then);
-			} 
+			}
 			else if (ifstmt.elseDo != null)
 			{
 				return Execute(ifstmt.elseDo);

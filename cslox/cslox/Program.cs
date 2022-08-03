@@ -65,6 +65,11 @@ namespace cslox
 			foreach (IStmt stmt in expression)
 				Console.WriteLine(new AstPrinter().Print(stmt));
 
+			Resolver resolver = new Resolver(interpreter);
+			resolver.Resolve(expression);
+
+			if (hadError) return;
+
 			interpreter.Interpret(expression);
 		}
 
