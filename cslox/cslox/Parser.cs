@@ -32,6 +32,7 @@ namespace cslox
 		{
 			try
 			{
+				if (Match(Token.TokenType.CLASS)) return ClassDeclaration();
 				if (Match(Token.TokenType.FN)) return FunctionDeclaration("function");
 				if (Match(Token.TokenType.VAR)) return VarDeclaration();
 
@@ -68,7 +69,7 @@ namespace cslox
 			return new Var(name, initializer);
 		}
 
-		private IStmt FunctionDeclaration(string kind)
+		private Function FunctionDeclaration(string kind)
 		{
 			Token name = Consume(Token.TokenType.IDENTIFIER, $"Expected {kind} name.");
 
@@ -93,6 +94,23 @@ namespace cslox
 			IStmt body = BlockStatement();
 
 			return new Function(name, parameters, body);
+		}
+
+		private IStmt ClassDeclaration()
+		{
+			Token name = Consume(Token.TokenType.IDENTIFIER, "Expected class name.");
+			Consume(Token.TokenType.LEFT_BRACE, "Expected '{' before class body.");
+
+			List<Function> methods = new();
+
+			while (!Check(Token.TokenType.RIGHT_BRACE) && !IsAtEnd())
+			{
+				methods.Add(FunctionDeclaration("method"));
+			}
+
+			Consume(Token.TokenType.RIGHT_BRACE, "Expected '}' closing class body.");
+
+			return new Class(name, methods);
 		}
 
 		private IStmt Statement()
@@ -249,8 +267,11 @@ namespace cslox
 			{
 				Token equals = Previous();
 				IExpr value = Assignment();
-
-				if (expr is Variable v)
+				if (expr is Get get)
+				{
+					return new Set(get.obj, get.name, value);
+				}
+				else if (expr is Variable v)
 				{
 					Token name = v.name;
 					return new Assign(name, value);
@@ -367,6 +388,11 @@ namespace cslox
 				if (Match(Token.TokenType.LEFT_PAREN))
 				{
 					expr = FinishCall(expr);
+				}
+				else if (Match(Token.TokenType.DOT))
+				{
+					Token name = Consume(Token.TokenType.IDENTIFIER, "Expect property name after '.'.");
+					expr = new Get(expr, name);
 				}
 				else
 				{

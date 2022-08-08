@@ -12,15 +12,18 @@
 			"Assign   : Token name, IExpr value",
 			"Binary   : IExpr left, Token op, IExpr right",
 			"Call	  : IExpr callee, Token paren, List<IExpr> arguments",
+			"Get	  : IExpr obj, Token name",
 			"Grouping : IExpr expression",
 			"Literal  : object? value",
 			"Logical  : IExpr left, Token op, IExpr right",
+			"Set      : IExpr obj, Token name, IExpr value",
 			"Unary    : Token op, IExpr right",
 			"Variable : Token name"
 		});
 
 		DefineAst(outputDir, "Stmt", new List<string>() {
 			"Block		: List<IStmt> statements",
+			"Class		: Token name, List<Function> methods",
 			"Expression : IExpr expression",
 			"Function	: Token name, List<Token> parameters, IStmt body",
 			"IfStmt		: IExpr condition, IStmt then, IStmt elseDo",
@@ -115,8 +118,8 @@
 	{
 		sw.WriteLine($"\tinternal interface I{baseName}Visitor<R>");
 		sw.WriteLine("\t{");
-		
-		foreach(string type in types)
+
+		foreach (string type in types)
 		{
 			string typeName = type.Split(':')[0].Trim();
 			sw.WriteLine($"\t\tR Visit{typeName}{baseName}({typeName} {typeName.ToLower()});");

@@ -112,7 +112,7 @@ namespace cslox
 		}
 	}
 
-	class AstPrinter : Expr.IExprVisitor<String>, IStmtVisitor<String>
+	class AstPrinter : IExprVisitor<string>, IStmtVisitor<String>
 	{
 		public string Print(IExpr expr)
 		{
@@ -149,6 +149,17 @@ namespace cslox
 			return $"(call callee: {call.callee.Accept(this)} {WrapInParentheses("arguments", call.arguments.ToArray())})";
 		}
 
+		public string VisitClassStmt(Class classStmt)
+		{
+			var s = "(class name: " + classStmt.name;
+			foreach (var fun in classStmt.methods)
+			{
+				s += fun.Accept(this);
+			}
+			s += ")";
+			return s;
+		}
+
 		public string VisitContinueStmtStmt(ContinueStmt continuestmt)
 		{
 			return "continue";
@@ -166,6 +177,11 @@ namespace cslox
 				s += $"(parameters {function.parameters.Select(t => t.lexeme).Aggregate((s, p) => s += " " + p)})";
 			s += $" {function.body.Accept(this)})";
 			return s;
+		}
+
+		public string VisitGetExpr(Get get)
+		{
+			return $"(get {get.obj.Accept(this)} {get.name.lexeme})";
 		}
 
 		public string VisitGroupingExpr(Grouping grouping)
@@ -193,6 +209,11 @@ namespace cslox
 		public string VisitReturnStmtStmt(ReturnStmt returnstmt)
 		{
 			return WrapInParentheses("return", returnstmt.toReturn);
+		}
+
+		public string VisitSetExpr(Set set)
+		{
+			return $"(set {set.obj.Accept(this)} {set.name.lexeme} to {set.value.Accept(this)})";
 		}
 
 		public string VisitUnaryExpr(Unary unary)

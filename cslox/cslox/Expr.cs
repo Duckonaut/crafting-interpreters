@@ -12,9 +12,11 @@ namespace cslox.Expr
 		R VisitAssignExpr(Assign assign);
 		R VisitBinaryExpr(Binary binary);
 		R VisitCallExpr(Call call);
+		R VisitGetExpr(Get get);
 		R VisitGroupingExpr(Grouping grouping);
 		R VisitLiteralExpr(Literal literal);
 		R VisitLogicalExpr(Logical logical);
+		R VisitSetExpr(Set set);
 		R VisitUnaryExpr(Unary unary);
 		R VisitVariableExpr(Variable variable);
 	}
@@ -55,6 +57,17 @@ namespace cslox.Expr
 		}
 		public R Accept<R>(IExprVisitor<R> visitor) => visitor.VisitCallExpr(this);
 	}
+	internal class Get : IExpr
+	{
+		internal IExpr obj;
+		internal Token name;
+		internal Get(IExpr obj, Token name)
+		{
+			this.obj = obj;
+			this.name = name;
+		}
+		public R Accept<R>(IExprVisitor<R> visitor) => visitor.VisitGetExpr(this);
+	}
 	internal class Grouping : IExpr
 	{
 		internal IExpr expression;
@@ -85,6 +98,19 @@ namespace cslox.Expr
 			this.right = right;
 		}
 		public R Accept<R>(IExprVisitor<R> visitor) => visitor.VisitLogicalExpr(this);
+	}
+	internal class Set : IExpr
+	{
+		internal IExpr obj;
+		internal Token name;
+		internal IExpr value;
+		internal Set(IExpr obj, Token name, IExpr value)
+		{
+			this.obj = obj;
+			this.name = name;
+			this.value = value;
+		}
+		public R Accept<R>(IExprVisitor<R> visitor) => visitor.VisitSetExpr(this);
 	}
 	internal class Unary : IExpr
 	{

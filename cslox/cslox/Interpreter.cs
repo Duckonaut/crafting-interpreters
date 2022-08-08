@@ -273,6 +273,15 @@ namespace cslox
 			return env.Define(function.name, loxFunction);
 		}
 
+		public object? VisitClassStmt(Class stmt)
+		{
+			env.Define(stmt.name, null, true);
+			LoxClass cl = new LoxClass(stmt.name.lexeme);
+			env.Assign(stmt.name, cl);
+
+			return null;
+		}
+
 		public object? VisitAssignExpr(Assign assign)
 		{
 			if (locals.ContainsKey(assign))
@@ -380,6 +389,31 @@ namespace cslox
 		{
 			if (returnstmt.toReturn == null) return null;
 			throw new ReturnException(Evaluate(returnstmt.toReturn));
+		}
+
+		public object? VisitGetExpr(Get get)
+		{
+			object? obj = Evaluate(get.obj);
+			if (obj is LoxInstance li)
+			{
+				return li.Get(get.name);
+			}
+
+			throw new RuntimeError(get.name, "Only instances of classes can have properties.");
+		}
+
+		public object? VisitSetExpr(Set set)
+		{
+			object? obj = Evaluate(set.obj);
+
+			if (obj is LoxInstance li)
+			{
+				object? value = Evaluate(set.value);
+				li.Set(set.name, value);
+				return value;
+			}
+
+			throw new RuntimeError(set.name, "Only instances of classes have fields.");
 		}
 	}
 

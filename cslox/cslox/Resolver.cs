@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace cslox
 {
-	internal class Resolver : Expr.IExprVisitor<object?>, Stmt.IStmtVisitor<object?>
+	internal class Resolver : IExprVisitor<object?>, Stmt.IStmtVisitor<object?>
 	{
 		private Interpreter interpreter;
 		private Stack<Dictionary<string, bool>> scopes = new();
@@ -228,9 +228,27 @@ namespace cslox
 
 		public object? VisitWhileStmtStmt(WhileStmt whilestmt)
 		{
-			Resolve(whilestmt.condition);
-			Resolve(whilestmt.then);
+			return null;
+		}
 
+		public object? VisitClassStmt(Class classStmt)
+		{
+			Declare(classStmt.name);
+			Define(classStmt.name);
+
+			return null;
+		}
+
+		public object? VisitGetExpr(Get get)
+		{
+			Resolve(get.obj);
+			return null;
+		}
+
+		public object? VisitSetExpr(Set set)
+		{
+			Resolve(set.value);
+			Resolve(set.obj);
 			return null;
 		}
 	}

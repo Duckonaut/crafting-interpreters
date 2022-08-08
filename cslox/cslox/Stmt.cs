@@ -11,6 +11,7 @@ namespace cslox.Stmt
 	internal interface IStmtVisitor<R>
 	{
 		R VisitBlockStmt(Block block);
+		R VisitClassStmt(Class cl);
 		R VisitExpressionStmt(Expression expression);
 		R VisitFunctionStmt(Function function);
 		R VisitIfStmtStmt(IfStmt ifstmt);
@@ -29,6 +30,17 @@ namespace cslox.Stmt
 			this.statements = statements;
 		}
 		public R Accept<R>(IStmtVisitor<R> visitor) => visitor.VisitBlockStmt(this);
+	}
+	internal class Class : IStmt
+	{
+		internal Token name;
+		internal List<Function> methods;
+		internal Class(Token name, List<Function> methods)
+		{
+			this.name = name;
+			this.methods = methods;
+		}
+		public R Accept<R>(IStmtVisitor<R> visitor) => visitor.VisitClassStmt(this);
 	}
 	internal class Expression : IStmt
 	{
