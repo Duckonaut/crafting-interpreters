@@ -24,7 +24,7 @@ namespace cslox
 
 			// Keywords.
 			AND, CLASS, ELSE, FALSE, FN, FOR, IF, NIL, OR,
-			RETURN, SUPER, THIS, TRUE, VAR, WHILE, MUT, BREAK, CONTINUE,
+			RETURN, SUPER, SELF, TRUE, VAR, WHILE, MUT, BREAK, CONTINUE,
 
 			EOF,
 			BUILTIN
@@ -42,7 +42,7 @@ namespace cslox
 			{ "or", TokenType.OR },
 			{ "return", TokenType.RETURN },
 			{ "super", TokenType.SUPER },
-			{ "this", TokenType.THIS },
+			{ "self", TokenType.SELF },
 			{ "true", TokenType.TRUE },
 			{ "var", TokenType.VAR },
 			{ "while", TokenType.WHILE },

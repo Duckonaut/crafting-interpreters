@@ -7,15 +7,24 @@ using System.Threading.Tasks;
 
 namespace cslox
 {
+	internal enum FunctionType
+	{
+		None,
+		Function,
+		Method,
+		Initializer
+	}
 	internal class LoxFunction : ILoxCallable
 	{
 		Function declaration;
 		private Environment closure;
+		private bool isInitializer;
 
-		public LoxFunction(Function declaration, Environment closure)
+		public LoxFunction(Function declaration, Environment closure, bool isInitializer)
 		{
 			this.declaration = declaration;
 			this.closure = closure;
+			this.isInitializer = isInitializer;
 		}
 
 		public int ArgumentCount => declaration.parameters.Count;
@@ -33,9 +42,18 @@ namespace cslox
 			}
 			catch (ReturnException r)
 			{
+				if (isInitializer) return closure.GetAt(0, "self");
 				return r.value;
 			}
+			if (isInitializer) return closure.GetAt(0, "self");
 			return null;
+		}
+
+		internal LoxFunction Bind(LoxInstance loxInstance)
+		{
+			var environment = new Environment(closure);
+			environment.Define(new Token(Token.TokenType.BUILTIN, "self", null, -1), loxInstance);
+			return new LoxFunction(declaration, environment, isInitializer);
 		}
 
 		public override string ToString()

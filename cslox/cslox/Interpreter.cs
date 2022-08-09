@@ -268,16 +268,47 @@ namespace cslox
 
 		public object? VisitFunctionStmt(Function function)
 		{
-			LoxFunction loxFunction = new LoxFunction(function, env);
+			LoxFunction loxFunction = new LoxFunction(function, env, false);
 			env.Define(function.name, loxFunction);
 			return env.Define(function.name, loxFunction);
 		}
 
 		public object? VisitClassStmt(Class stmt)
 		{
+			object? superclass = null;
+			if (stmt.superclass != null)
+			{
+				superclass = Evaluate(stmt.superclass);
+
+				if (!(superclass is LoxClass))
+				{
+					throw new RuntimeError(stmt.superclass.name, "Superclass must be a class.");
+				}
+			}
 			env.Define(stmt.name, null, true);
-			LoxClass cl = new LoxClass(stmt.name.lexeme);
+
+			if (superclass != null)
+			{
+				env = new Environment(env);
+				env.Define(new Token(Token.TokenType.BUILTIN, "super", null, -1), superclass);
+			}
+
+			Dictionary<string, LoxFunction> methods = new();
+
+			foreach (var method in stmt.methods)
+			{
+				var function = new LoxFunction(method, env, method.name.lexeme == "self");
+				methods[method.name.lexeme] = function;
+			}
+			
+			LoxClass cl = new LoxClass(stmt.name.lexeme, (LoxClass?)superclass, methods);
+			
 			env.Assign(stmt.name, cl);
+
+			if (superclass != null)
+			{
+				env = env.enclosing;
+			}
 
 			return null;
 		}
@@ -414,6 +445,28 @@ namespace cslox
 			}
 
 			throw new RuntimeError(set.name, "Only instances of classes have fields.");
+		}
+
+		public object? VisitSelfExpr(Self self)
+		{
+			return LookUpVariable(self.keyword, self);
+		}
+
+		public object? VisitSuperExpr(Super super)
+		{
+			int distance = locals[super];
+
+			var superclass = (LoxClass)env.GetAt(distance, "super");
+			var obj = (LoxInstance)env.GetAt(distance - 1, "self");
+
+			var method = superclass.FindMethod(super.method.lexeme);
+
+			if (method == null)
+			{
+				throw new RuntimeError(super.method, "Undefined property '" + super.method.lexeme + "'.");
+			}
+
+			return method.Bind(obj);
 		}
 	}
 

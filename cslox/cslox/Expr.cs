@@ -16,6 +16,8 @@ namespace cslox.Expr
 		R VisitGroupingExpr(Grouping grouping);
 		R VisitLiteralExpr(Literal literal);
 		R VisitLogicalExpr(Logical logical);
+		R VisitSelfExpr(Self self);
+		R VisitSuperExpr(Super super);
 		R VisitSetExpr(Set set);
 		R VisitUnaryExpr(Unary unary);
 		R VisitVariableExpr(Variable variable);
@@ -98,6 +100,26 @@ namespace cslox.Expr
 			this.right = right;
 		}
 		public R Accept<R>(IExprVisitor<R> visitor) => visitor.VisitLogicalExpr(this);
+	}
+	internal class Self : IExpr
+	{
+		internal Token keyword;
+		internal Self(Token keyword)
+		{
+			this.keyword = keyword;
+		}
+		public R Accept<R>(IExprVisitor<R> visitor) => visitor.VisitSelfExpr(this);
+	}
+	internal class Super : IExpr
+	{
+		internal Token keyword;
+		internal Token method;
+		internal Super(Token keyword, Token method)
+		{
+			this.keyword = keyword;
+			this.method = method;
+		}
+		public R Accept<R>(IExprVisitor<R> visitor) => visitor.VisitSuperExpr(this);
 	}
 	internal class Set : IExpr
 	{

@@ -14,3 +14,12 @@ var mut a = "global";
     var a = "block";
     show_a();
 }
+
+class Cum {
+    MARIO() {
+
+    }
+    GRONGER() {
+
+    }
+}

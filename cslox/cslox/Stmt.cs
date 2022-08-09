@@ -34,10 +34,12 @@ namespace cslox.Stmt
 	internal class Class : IStmt
 	{
 		internal Token name;
+		internal Variable superclass;
 		internal List<Function> methods;
-		internal Class(Token name, List<Function> methods)
+		internal Class(Token name, Variable superclass, List<Function> methods)
 		{
 			this.name = name;
+			this.superclass = superclass;
 			this.methods = methods;
 		}
 		public R Accept<R>(IStmtVisitor<R> visitor) => visitor.VisitClassStmt(this);

@@ -1,0 +1,50 @@
+class Character {
+    init(name) {
+        self.name = name;
+    }
+
+    sayHi() {
+        print("Hi, I'm ");
+        println(self.name);
+    }
+}
+
+class Jumper < Character {
+    init(name, jumpHeight) {
+        super.init(name);
+        self.jumpHeight = jumpHeight;
+    }
+
+    jump() {
+        print("Jumping ");
+        print(self.jumpHeight);
+        println(" meters into the air like a frog");
+    }
+}
+
+class Mario < Jumper {
+    init() {
+        super.init("Mario", 2);
+    }
+}
+
+class Luigi < Jumper {
+    init() {
+        super.init("Luigi", 2.4);
+    }
+}
+
+var mario = Mario();
+var luigi = Luigi();
+
+var genericCharacter = Character("Koopa");
+var genericJumper = Jumper("Toad", 1.6);
+
+mario.sayHi();
+luigi.sayHi();
+genericCharacter.sayHi();
+genericJumper.sayHi();
+
+mario.jump();
+luigi.jump();
+genericJumper.jump();

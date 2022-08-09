@@ -9,7 +9,7 @@ namespace cslox
 	internal class Environment
 	{
 		private Dictionary<string, VariableInstance> values = new Dictionary<string, VariableInstance>();
-		private Environment enclosing;
+		public Environment enclosing;
 
 		internal Environment() { enclosing = null; }
 

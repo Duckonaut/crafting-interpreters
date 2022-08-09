@@ -211,9 +211,19 @@ namespace cslox
 			return WrapInParentheses("return", returnstmt.toReturn);
 		}
 
+		public string VisitSelfExpr(Self self)
+		{
+			return "self";
+		}
+
 		public string VisitSetExpr(Set set)
 		{
 			return $"(set {set.obj.Accept(this)} {set.name.lexeme} to {set.value.Accept(this)})";
+		}
+
+		public string VisitSuperExpr(Super super)
+		{
+			return $"(super {super.method.lexeme}";
 		}
 
 		public string VisitUnaryExpr(Unary unary)

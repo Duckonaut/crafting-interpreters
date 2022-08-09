@@ -12,6 +12,8 @@ namespace cslox
 	{
 		private Interpreter interpreter;
 		private Stack<Dictionary<string, bool>> scopes = new();
+		private FunctionType currentFunction = FunctionType.None;
+		private ClassType currentClass = ClassType.None;
 
 		internal Resolver(Interpreter interpreter)
 		{
@@ -74,8 +76,10 @@ namespace cslox
 			}
 		}
 
-		void ResolveFunction(Function function)
+		void ResolveFunction(Function function, FunctionType type)
 		{
+			var enclosingType = currentFunction;
+			currentFunction = type;
 			BeginScope();
 			foreach (Token param in function.parameters)
 			{
@@ -83,12 +87,13 @@ namespace cslox
 				Define(param);
 			}
 
-			
+
 			foreach (IStmt statement in (function.body as Block).statements)
 			{
 				Resolve(statement);
 			}
 			EndScope();
+			currentFunction = enclosingType;
 		}
 
 		public object? VisitAssignExpr(Assign assign)
@@ -147,7 +152,7 @@ namespace cslox
 			Declare(function.name);
 			Define(function.name);
 
-			ResolveFunction(function);
+			ResolveFunction(function, FunctionType.Function);
 
 			return null;
 		}
@@ -181,8 +186,17 @@ namespace cslox
 
 		public object? VisitReturnStmtStmt(ReturnStmt returnstmt)
 		{
+			if (currentFunction == FunctionType.None)
+			{
+				Program.Error(returnstmt.keyword.line, "Can't return from outside a function.");
+			}
+
 			if (returnstmt.toReturn != null)
 			{
+				if (currentFunction == FunctionType.Initializer)
+				{
+					Program.Error(returnstmt.keyword.line, "Can't return a value from an initializer.");
+				}
 				Resolve(returnstmt.toReturn);
 			}
 
@@ -233,8 +247,45 @@ namespace cslox
 
 		public object? VisitClassStmt(Class classStmt)
 		{
+			ClassType enclosing = currentClass;
+			currentClass = ClassType.Class;
+
 			Declare(classStmt.name);
 			Define(classStmt.name);
+
+			if (classStmt.superclass != null)
+			{
+				if (classStmt.name.lexeme == classStmt.superclass.name.lexeme)
+				{
+					Program.Error(classStmt.superclass.name.line, "A class cannot inherit from itself.");
+				}
+				currentClass = ClassType.Subclass;
+				Resolve(classStmt.superclass);
+			}
+
+			if (classStmt.superclass != null)
+			{
+				BeginScope();
+				scopes.Peek()["super"] = true;
+			}
+
+
+			BeginScope();
+			scopes.Peek()["self"] = true;
+
+			foreach (Function method in classStmt.methods)
+			{
+				var type = FunctionType.Method;
+				if (method.name.lexeme == "self") type = FunctionType.Initializer;
+				ResolveFunction(method, type);
+			}
+			EndScope();
+
+			if (classStmt.superclass != null)
+			{
+				EndScope();
+			}
+			currentClass = enclosing;
 
 			return null;
 		}
@@ -249,6 +300,31 @@ namespace cslox
 		{
 			Resolve(set.value);
 			Resolve(set.obj);
+			return null;
+		}
+
+		public object? VisitSelfExpr(Self self)
+		{
+			if (currentClass == ClassType.None)
+			{
+				Program.Error(self.keyword.line, "Can't use 'self' outside of a class.");
+				return null;
+			}
+			ResolveLocal(self, self.keyword);
+			return null;
+		}
+
+		public object? VisitSuperExpr(Super super)
+		{
+			if (currentClass == ClassType.None)
+			{
+				Program.Error(super.keyword.line, "Can't use 'super' outside of a class.");
+			}
+			else if (currentClass != ClassType.Subclass)
+			{
+				Program.Error(super.keyword.line, "Can't use 'super' in a class without a subclass.");
+			}
+			ResolveLocal(super, super.keyword);
 			return null;
 		}
 	}

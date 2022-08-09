@@ -38,7 +38,7 @@ namespace cslox
 
 				return Statement();
 			}
-			catch (ParseError e)
+			catch (ParseError _)
 			{
 				Synchronize();
 				return null;
@@ -99,6 +99,14 @@ namespace cslox
 		private IStmt ClassDeclaration()
 		{
 			Token name = Consume(Token.TokenType.IDENTIFIER, "Expected class name.");
+
+			Variable superclass = null;
+			if (Match(Token.TokenType.LESS))
+			{
+				Consume(Token.TokenType.IDENTIFIER, "Expected superclass name.");
+				superclass = new Variable(Previous());
+			}
+
 			Consume(Token.TokenType.LEFT_BRACE, "Expected '{' before class body.");
 
 			List<Function> methods = new();
@@ -110,7 +118,7 @@ namespace cslox
 
 			Consume(Token.TokenType.RIGHT_BRACE, "Expected '}' closing class body.");
 
-			return new Class(name, methods);
+			return new Class(name, superclass, methods);
 		}
 
 		private IStmt Statement()
@@ -440,6 +448,19 @@ namespace cslox
 				IExpr expr = Expression();
 				Consume(Token.TokenType.RIGHT_PAREN, "Expected ')' after the expression.");
 				return new Grouping(expr);
+			}
+
+			if (Match(Token.TokenType.SELF))
+			{
+				return new Self(Previous());
+			}
+
+			if (Match(Token.TokenType.SUPER))
+			{
+				var keyword = Previous();
+				Consume(Token.TokenType.DOT, "Expect '.' after 'super'.");
+				var method = Consume(Token.TokenType.IDENTIFIER, "Expect superclass method name.");
+				return new Super(keyword, method);
 			}
 
 			if (Match(Token.TokenType.IDENTIFIER))

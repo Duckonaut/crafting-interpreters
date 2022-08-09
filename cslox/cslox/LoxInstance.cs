@@ -28,6 +28,9 @@ namespace cslox
 				return fields[name.lexeme];
 			}
 
+			LoxFunction method = cl.FindMethod(name.lexeme);
+			if (method != null) return method.Bind(this);
+
 			throw new RuntimeError(name, "Undefined propery '" + name.lexeme + "'.");
 		}
 

@@ -16,6 +16,8 @@
 			"Grouping : IExpr expression",
 			"Literal  : object? value",
 			"Logical  : IExpr left, Token op, IExpr right",
+			"Self     : Token keyword",
+			"Super    : Token keyword, Token method",
 			"Set      : IExpr obj, Token name, IExpr value",
 			"Unary    : Token op, IExpr right",
 			"Variable : Token name"
@@ -23,7 +25,7 @@
 
 		DefineAst(outputDir, "Stmt", new List<string>() {
 			"Block		: List<IStmt> statements",
-			"Class		: Token name, List<Function> methods",
+			"Class		: Token name, Variable superclass, List<Function> methods",
 			"Expression : IExpr expression",
 			"Function	: Token name, List<Token> parameters, IStmt body",
 			"IfStmt		: IExpr condition, IStmt then, IStmt elseDo",
