@@ -7,52 +7,49 @@ class Character {
         print("Hi, I'm ");
         println(self.name);
     }
+
+    haveAChild() {
+        return Character("Child of " + self.name);
+    }
+
+    getFlag() {
+        class Flag {
+            init(name) {
+                self.name = name;
+            }
+
+            wave() {
+                print("The flag of ");
+                println(self.name);
+            }
+        }
+
+        return Flag(self.name);
+    }
+
+    getFlagWaveCallback() {
+        return self.getFlag().wave;
+    }
 }
 
-class Jumper < Character {
-    init(name, jumpHeight) {
-        super.init(name);
-        self.jumpHeight = jumpHeight;
+class Mario < Character {
+    init() {
+        super.init("Mario");
     }
 
     jump() {
-        print("Jumping ");
-        print(self.jumpHeight);
-        println(" meters into the air like a frog");
-    }
-}
-
-class Mario < Jumper {
-    init() {
-        super.init("Mario", 2);
-    }
-}
-
-class Luigi < Jumper {
-    init() {
-        super.init("Luigi", 2.4);
+        println("Jump!");
     }
 }
 
 var mario = Mario();
-var luigi = Luigi();
-
-var genericCharacter = Character("Koopa");
-var genericJumper = Jumper("Toad", 1.6);
-
-mario.sayHi();
-luigi.sayHi();
-genericCharacter.sayHi();
-genericJumper.sayHi();
+var koopa = Character("Koopa");
 
 mario.jump();
-luigi.jump();
-genericJumper.jump();
-abc.mario();
-abc.call().access.DoubleCall()();
-var abcder = (a + b);
-abc.mario();
-(a);
-(a - b);
-(a + b);
-abc.mario();
+println(mario.haveAChild().name);
+
+var childWaveLater = mario.haveAChild().getFlagWaveCallback();
+var marioFlag = mario.getFlag();
+
+marioFlag.wave();
+childWaveLater();

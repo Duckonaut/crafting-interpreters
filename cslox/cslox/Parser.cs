@@ -1,14 +1,9 @@
 ﻿using cslox.Expr;
 using cslox.Stmt;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace cslox
 {
-	internal class Parser
+    internal class Parser
 	{
 		private List<Token> tokens;
 		private int current = 0;
@@ -18,9 +13,9 @@ namespace cslox
 			this.tokens = tokens;
 		}
 
-		internal List<IStmt> Parse()
+		internal List<IStmt?> Parse()
 		{
-			List<IStmt> statements = new List<IStmt>();
+			List<IStmt?> statements = new List<IStmt?>();
 			while (!IsAtEnd())
 			{
 				statements.Add(Declaration());
@@ -28,7 +23,7 @@ namespace cslox
 			return statements;
 		}
 
-		private IStmt Declaration()
+		private IStmt? Declaration()
 		{
 			try
 			{
@@ -38,7 +33,7 @@ namespace cslox
 
 				return Statement();
 			}
-			catch (ParseError _)
+			catch (ParseError)
 			{
 				Synchronize();
 				return null;
@@ -53,7 +48,7 @@ namespace cslox
 
 			Token name = Consume(Token.TokenType.IDENTIFIER, "Expected variable name.");
 
-			IExpr initializer = null;
+			IExpr? initializer = null;
 
 			if (Match(Token.TokenType.EQUAL))
 			{

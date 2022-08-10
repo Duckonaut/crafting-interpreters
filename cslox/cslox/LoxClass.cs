@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace cslox
+﻿namespace cslox
 {
-	internal enum ClassType
+    internal enum ClassType
 	{
 		None,
 		Class,
@@ -40,7 +34,7 @@ namespace cslox
 		{
 			LoxInstance instance = new LoxInstance(this);
 
-			LoxFunction initializer = FindMethod("init");
+			LoxFunction? initializer = FindMethod("init");
 
 			if (initializer != null)
 			{

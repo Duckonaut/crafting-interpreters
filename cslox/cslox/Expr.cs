@@ -1,9 +1,6 @@
-using System.Collections.Generic;
-using System;
-
 namespace cslox.Expr
 {
-	internal interface IExpr
+    internal interface IExpr
 	{
 		public R Accept<R>(IExprVisitor<R> visitor);
 	}

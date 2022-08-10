@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace cslox
+﻿namespace cslox
 {
-	internal class Environment
+    internal class Environment
 	{
 		private Dictionary<string, VariableInstance> values = new Dictionary<string, VariableInstance>();
 		public Environment enclosing;

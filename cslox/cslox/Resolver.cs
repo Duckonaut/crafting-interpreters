@@ -1,14 +1,9 @@
 ﻿using cslox.Expr;
 using cslox.Stmt;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace cslox
 {
-	internal class Resolver : IExprVisitor<object?>, Stmt.IStmtVisitor<object?>
+    internal class Resolver : IExprVisitor<object?>, Stmt.IStmtVisitor<object?>
 	{
 		private Interpreter interpreter;
 		private Stack<Dictionary<string, bool>> scopes = new();

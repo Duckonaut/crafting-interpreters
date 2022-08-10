@@ -1,10 +1,8 @@
-using System.Collections.Generic;
-using System;
 using cslox.Expr;
 
 namespace cslox.Stmt
 {
-	internal interface IStmt
+    internal interface IStmt
 	{
 		public R Accept<R>(IStmtVisitor<R> visitor);
 	}

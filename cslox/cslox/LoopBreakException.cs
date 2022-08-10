@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace cslox
+﻿namespace cslox
 {
-	internal class LoopBreakException : Exception
+    internal class LoopBreakException : Exception
 	{
 		internal enum LoopBreakType
 		{

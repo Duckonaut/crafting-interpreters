@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace cslox
+﻿namespace cslox
 {
-	internal class NativeLoxCallable : ILoxCallable
+    internal class NativeLoxCallable : ILoxCallable
 	{
 		private int argumentCount;
 		private Func<Interpreter, List<object?>, object?> func;
