@@ -33,7 +33,11 @@ fn run(file: Option<PathBuf>) -> Result<()> {
         let mut stdin = stdin.lock();
         let mut code = String::new();
         stdin.read_to_string(&mut code)?;
-        hezen_runtime::run(String::from("<stdin>"), code)?;
+        let result = hezen_runtime::run(String::from("<stdin>"), code);
+
+        if let Err(err) = result {
+            eprintln!("{}", err);
+        }
     }
     Ok(())
 }

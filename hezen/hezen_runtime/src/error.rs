@@ -1,22 +1,34 @@
 use std::{error::Error, fmt::Display};
 
 #[derive(Debug)]
-pub enum HezenError {
-    Parser(HezenLineInfo, String),
-    Validation(HezenLineInfo, String),
-    Runtime(HezenLineInfo, String),
-}
-
-#[derive(Debug)]
 pub struct HezenLineInfo {
     pub file: String,
     pub line: usize,
     pub column: usize,
 }
 
+impl HezenLineInfo {
+    pub fn new(file: String, line: usize, column: usize) -> Self {
+        Self { file, line, column }
+    }
+}
+
+#[derive(Debug)]
+pub enum HezenError {
+    SyntaxError(String, HezenLineInfo),
+    Parser(HezenLineInfo, String),
+    Validation(HezenLineInfo, String),
+    Runtime(HezenLineInfo, String),
+}
+
 impl Display for HezenError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            HezenError::SyntaxError(msg, line_info) => write!(
+                f,
+                "SyntaxError: {} at {}:{}:{}",
+                msg, line_info.file, line_info.line, line_info.column
+            ),
             HezenError::Parser(info, msg) => write!(
                 f,
                 "Parser error in file {} at line {}:{}: {}",
@@ -39,6 +51,10 @@ impl Display for HezenError {
 impl Error for HezenError {}
 
 impl HezenError {
+    pub fn syntax_error(msg: String, line_info: HezenLineInfo) -> Self {
+        Self::SyntaxError(msg, line_info)
+    }
+
     pub fn parser(file: String, line: usize, column: usize, msg: String) -> Self {
         Self::Parser(HezenLineInfo { file, line, column }, msg)
     }
@@ -58,10 +74,6 @@ pub struct HezenErrorList {
 }
 
 impl HezenErrorList {
-    pub fn new() -> Self {
-        Self { errors: vec![] }
-    }
-
     pub fn add(&mut self, error: HezenError) {
         self.errors.push(error);
     }
@@ -76,6 +88,12 @@ impl HezenErrorList {
 
     pub fn iter(&self) -> std::slice::Iter<'_, HezenError> {
         self.errors.iter()
+    }
+}
+
+impl Default for HezenErrorList {
+    fn default() -> Self {
+        Self { errors: Vec::new() }
     }
 }
 
