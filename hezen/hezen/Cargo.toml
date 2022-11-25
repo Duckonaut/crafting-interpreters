@@ -1,0 +1,9 @@
+[package]
+name = "hezen"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0"
+clap = { version = "4.0.27", features = ["derive"] }
+hezen_runtime = { path = "../hezen_runtime" }
