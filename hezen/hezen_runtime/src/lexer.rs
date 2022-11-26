@@ -46,7 +46,11 @@ impl<'a> Lexer<'a> {
         self.tokens.add(Token::new(
             TokenType::Eof,
             "".to_string(),
-            HezenLineInfo::new(self.filename.clone(), self.line, self.line_start),
+            HezenLineInfo::new(
+                self.filename.clone(),
+                self.line,
+                self.current - self.line_start,
+            ),
         ));
 
         self.tokens
@@ -122,7 +126,11 @@ impl<'a> Lexer<'a> {
         self.tokens.add(Token::new(
             token,
             text,
-            HezenLineInfo::new(self.filename.clone(), self.line, self.line_start),
+            HezenLineInfo::new(
+                self.filename.clone(),
+                self.line,
+                self.current - self.line_start,
+            ),
         ));
     }
 
@@ -240,8 +248,10 @@ impl<'a> Lexer<'a> {
 
     fn error(&mut self, message: &str) {
         self.errors.add(HezenError::syntax_error(
+            self.filename.clone(),
+            self.line,
+            self.current - self.line_start,
             message.to_string(),
-            HezenLineInfo::new(self.filename.clone(), self.line, self.current - self.line_start),
         ));
     }
 }

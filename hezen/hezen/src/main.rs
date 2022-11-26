@@ -27,16 +27,24 @@ fn run(file: Option<PathBuf>) -> Result<()> {
     if let Some(file) = file {
         let filename = file.to_str().unwrap().to_string();
         let code = std::fs::read_to_string(file)?;
-        hezen_runtime::run(filename, code)?;
+        let result = hezen_runtime::run(filename, code.clone());
+
+        if let Err(err) = result {
+            let mut buffer = String::new();
+            err.print_details(&mut buffer, &*code).unwrap();
+            eprintln!("{}", buffer);
+        }
     } else {
         let stdin = std::io::stdin();
         let mut stdin = stdin.lock();
         let mut code = String::new();
         stdin.read_to_string(&mut code)?;
-        let result = hezen_runtime::run(String::from("<stdin>"), code);
+        let result = hezen_runtime::run(String::from("<stdin>"), code.clone());
 
         if let Err(err) = result {
-            eprintln!("{}", err);
+            let mut buffer = String::new();
+            err.print_details(&mut buffer, &*code).unwrap();
+            eprintln!("{}", buffer);
         }
     }
     Ok(())
