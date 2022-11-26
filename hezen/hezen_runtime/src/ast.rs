@@ -62,7 +62,7 @@ impl Display for Expr {
             ),
             Expr::Call(callee, _, arguments) => write!(
                 f,
-                "(call callee: {} {}",
+                "(call callee: {} {})",
                 callee,
                 wrap_expr_in_parentheses("arguments", arguments.iter().map(Some).collect())
             ),
@@ -120,13 +120,20 @@ impl Display for Stmt {
             Stmt::Expression(expr) => write!(f, "{}", expr),
             Stmt::Function(name, params, body) => write!(
                 f,
-                "(function name: {} (params {}) {})",
+                "(function name: {}{} {})",
                 name.lexeme,
-                params
-                    .iter()
-                    .map(|p| p.lexeme.clone())
-                    .collect::<Vec<String>>()
-                    .join(" "),
+                if !params.is_empty() {
+                    format!(
+                        " (params {})",
+                        params
+                            .iter()
+                            .map(|p| p.lexeme.clone())
+                            .collect::<Vec<String>>()
+                            .join(" "),
+                    )
+                } else {
+                    "".to_string()
+                },
                 body
             ),
             Stmt::If(condition, then_branch, else_branch) => write!(

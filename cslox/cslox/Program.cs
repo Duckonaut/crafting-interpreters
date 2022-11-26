@@ -135,7 +135,7 @@ namespace cslox
 
         public string VisitAssignExpr(Assign assign)
         {
-            return WrapInParentheses($"(assign {assign.name.lexeme}", assign.value);
+            return WrapInParentheses($"assign {assign.name.lexeme}", assign.value);
         }
 
         public string VisitBinaryExpr(Binary binary)
