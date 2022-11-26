@@ -1,7 +1,9 @@
 use crate::error::HezenErrorList;
 
+mod ast;
 mod error;
 mod lexer;
+mod parser;
 mod token;
 
 pub fn run(filename: String, code: String) -> Result<(), HezenErrorList> {
@@ -19,6 +21,18 @@ pub fn run(filename: String, code: String) -> Result<(), HezenErrorList> {
     }
 
     println!("Tokens: {}", tokens);
+
+    let parser = parser::Parser::new(tokens, &mut errors);
+
+    let ast = parser.parse();
+
+    if !errors.is_empty() {
+        return Err(errors);
+    }
+
+    for node in ast.iter() {
+        println!("{}", node);
+    }
 
     Ok(())
 }

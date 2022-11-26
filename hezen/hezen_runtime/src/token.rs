@@ -2,6 +2,7 @@ use std::fmt::Display;
 
 use crate::error::HezenLineInfo;
 
+#[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
     LeftParen,
     RightParen,
@@ -103,6 +104,7 @@ impl Display for TokenType {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Token {
     pub ty: TokenType,
     pub lexeme: String,
@@ -121,10 +123,11 @@ impl Token {
 
 impl Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} {}", self.ty, self.lexeme)
+        write!(f, "{}: {}", self.lexeme, self.ty)
     }
 }
 
+#[derive(Debug)]
 pub struct Tokens {
     pub list: Vec<Token>,
 }

@@ -1,6 +1,6 @@
 use std::{error::Error, fmt::Display};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct HezenLineInfo {
     pub file: String,
     pub line: usize,
@@ -68,7 +68,7 @@ impl HezenError {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct HezenErrorList {
     errors: Vec<HezenError>,
 }
@@ -88,12 +88,6 @@ impl HezenErrorList {
 
     pub fn iter(&self) -> std::slice::Iter<'_, HezenError> {
         self.errors.iter()
-    }
-}
-
-impl Default for HezenErrorList {
-    fn default() -> Self {
-        Self { errors: Vec::new() }
     }
 }
 
