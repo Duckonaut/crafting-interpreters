@@ -1,9 +1,6 @@
+use crate::token::{Token, TokenType, Tokens};
+use hezen_core::error::{HezenError, HezenErrorList, HezenLineInfo};
 use once_cell::sync::Lazy;
-
-use crate::{
-    error::{HezenError, HezenErrorList, HezenLineInfo},
-    token::{Token, TokenType, Tokens},
-};
 
 static NEWLINE_REGEX: Lazy<regex::Regex> =
     Lazy::new(|| regex::Regex::new(r"(^|[^\\])(\\n)").unwrap());

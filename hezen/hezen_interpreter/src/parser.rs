@@ -1,8 +1,8 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
+use hezen_core::error::{HezenError, HezenErrorList};
 use crate::ast::{Expr, Literal, Stmt};
-use crate::error::{HezenError, HezenErrorList};
 use crate::token::{Token, TokenType, Tokens};
 
 macro_rules! match_literal_token {
@@ -587,7 +587,7 @@ impl<'a> Parser<'a> {
     fn error(&mut self, token: Token, message: &str) -> ParseError {
         let error = ParseError::new(token.clone(), message.into());
 
-        self.errors.add(HezenError::parser(
+        self.errors.add(HezenError::syntax_error(
             token.position.file,
             token.position.line,
             token.position.column,

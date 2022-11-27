@@ -143,12 +143,35 @@ dependencies = [
 ]
 
 [[package]]
-name = "hezen_runtime"
+name = "hezen_compiler"
+version = "0.1.0"
+dependencies = [
+ "hezen_core",
+]
+
+[[package]]
+name = "hezen_core"
 version = "0.1.0"
 dependencies = [
  "colored",
+]
+
+[[package]]
+name = "hezen_interpreter"
+version = "0.1.0"
+dependencies = [
+ "hezen_core",
  "once_cell",
  "regex",
+]
+
+[[package]]
+name = "hezen_runtime"
+version = "0.1.0"
+dependencies = [
+ "hezen_compiler",
+ "hezen_core",
+ "hezen_interpreter",
 ]
 
 [[package]]

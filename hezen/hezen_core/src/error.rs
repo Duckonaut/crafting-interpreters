@@ -19,7 +19,6 @@ impl HezenLineInfo {
 #[derive(Debug)]
 pub enum HezenError {
     Syntax(HezenLineInfo, String),
-    Parser(HezenLineInfo, String),
     Validation(HezenLineInfo, String),
     Runtime(HezenLineInfo, String),
 }
@@ -31,11 +30,6 @@ impl Display for HezenError {
                 f,
                 "SyntaxError: {} at {}:{}:{}",
                 msg, info.file, info.line, info.column
-            ),
-            HezenError::Parser(info, msg) => write!(
-                f,
-                "Parser error in file {} at line {}:{}: {}",
-                info.file, info.line, info.column, msg
             ),
             HezenError::Validation(info, msg) => write!(
                 f,
@@ -58,10 +52,6 @@ impl HezenError {
         Self::Syntax(HezenLineInfo { file, line, column }, msg)
     }
 
-    pub fn parser(file: String, line: usize, column: usize, msg: String) -> Self {
-        Self::Parser(HezenLineInfo { file, line, column }, msg)
-    }
-
     pub fn validation(file: String, line: usize, column: usize, msg: String) -> Self {
         Self::Validation(HezenLineInfo { file, line, column }, msg)
     }
@@ -79,9 +69,6 @@ impl HezenError {
         match self {
             HezenError::Syntax(info, msg) => {
                 self.print_internal(f, source, info, "syntax error", msg)
-            }
-            HezenError::Parser(info, msg) => {
-                self.print_internal(f, source, info, "parser error", msg)
             }
             HezenError::Validation(info, msg) => {
                 self.print_internal(f, source, info, "validation error", msg)

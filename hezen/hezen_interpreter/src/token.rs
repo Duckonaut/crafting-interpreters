@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::error::HezenLineInfo;
+use hezen_core::error::HezenLineInfo;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {

@@ -1,0 +1,11 @@
+[package]
+name = "hezen_core"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = ["color"]
+color = ["dep:colored"]
+
+[dependencies]
+colored = { version = "1.0", optional = true }

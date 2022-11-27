@@ -3,7 +3,10 @@ resolver = "2"
 
 members = [
     "hezen",
+    "hezen_core",
     "hezen_runtime",
+    "hezen_interpreter",
+    "hezen_compiler",
 ]
 
 exclude = [
