@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::token::Token;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Expr {
     Assign(Token, Box<Expr>),
     Binary(Box<Expr>, Token, Box<Expr>),
@@ -24,6 +24,33 @@ pub enum Literal {
     Bool(bool),
     Number(f64),
     String(String),
+}
+
+impl PartialEq for Literal {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Bool(l0), Self::Bool(r0)) => l0 == r0,
+            (Self::Number(l0), Self::Number(r0)) => l0 == r0,
+            (Self::String(l0), Self::String(r0)) => l0 == r0,
+            _ => core::mem::discriminant(self) == core::mem::discriminant(other),
+        }
+    }
+}
+
+impl std::hash::Hash for Literal {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        core::mem::discriminant(self).hash(state);
+        match self {
+            Self::Bool(v) => v.hash(state),
+            Self::Number(v) => v.to_bits().hash(state),
+            Self::String(v) => v.hash(state),
+            _ => {}
+        }
+    }
+}
+
+impl Eq for Literal {
+    
 }
 
 #[derive(Debug, Clone)]

@@ -15,6 +15,13 @@ namespace cslox
 			this.interpreter = interpreter;
 		}
 
+        public void GlobalResolve(List<IStmt> statements)
+        {
+            BeginScope();
+            Resolve(statements);
+            EndScope();
+        }
+
 		public void Resolve(IList<IStmt> statements)
 		{
 			foreach (IStmt statement in statements)
@@ -207,6 +214,11 @@ namespace cslox
 
 		public object? VisitVariableExpr(Variable variable)
 		{
+            if (scopes.Count > 0 && scopes.Peek().TryGetValue(variable.name.lexeme, out bool isDefined) && !isDefined)
+            {
+                Program.Error(variable.name.line, "Can't read local variable in its own initializer.");
+            }
+
 			ResolveLocal(variable, variable.name);
 			return null;
 		}
@@ -271,7 +283,7 @@ namespace cslox
 			foreach (Function method in classStmt.methods)
 			{
 				var type = FunctionType.Method;
-				if (method.name.lexeme == "self") type = FunctionType.Initializer;
+				if (method.name.lexeme == "init") type = FunctionType.Initializer;
 				ResolveFunction(method, type);
 			}
 			EndScope();

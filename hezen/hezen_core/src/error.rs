@@ -3,7 +3,7 @@ use std::{error::Error, fmt::Display};
 #[cfg(feature = "color")]
 use colored::Colorize;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct HezenLineInfo {
     pub file: String,
     pub line: usize,

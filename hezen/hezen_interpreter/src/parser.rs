@@ -177,7 +177,7 @@ impl<'a> Parser<'a> {
             return self.if_statement();
         } else if self.match_token(TokenType::While) {
             return self.while_statement();
-        } else if self.match_token(TokenType::LeftBrace) {
+        } else if self.check(TokenType::LeftBrace) {
             return self.block_statement();
         }
 

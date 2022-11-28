@@ -8,7 +8,17 @@ pub fn run(filename: String, code: String) -> Result<(), HezenErrorList> {
     hezen_interpreter::run(filename, code)
 }
 
+#[cfg(feature = "interpreter")]
+pub fn shell() {
+    hezen_interpreter::shell()
+}
+
 #[cfg(feature = "compiler")]
 pub fn run(filename: String, code: String) -> Result<(), HezenErrorList> {
     hezen_compiler::run(filename, code)
+}
+
+#[cfg(feature = "compiler")]
+pub fn shell() {
+    unimplemented!()
 }

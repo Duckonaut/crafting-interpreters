@@ -13,14 +13,19 @@ struct Args {
 enum SubCommand {
     #[command(name = "run")]
     Run { file: Option<PathBuf> },
+    #[command(name = "shell")]
+    Shell,
 }
 
 fn main() -> Result<()> {
     let args = Args::parse();
 
     match args.subcmd {
-        SubCommand::Run { file } => run(file),
+        SubCommand::Run { file } => run(file)?,
+        SubCommand::Shell => shell(),
     }
+
+    Ok(())
 }
 
 fn run(file: Option<PathBuf>) -> Result<()> {
@@ -48,4 +53,8 @@ fn run(file: Option<PathBuf>) -> Result<()> {
         }
     }
     Ok(())
+}
+
+fn shell() {
+    hezen_runtime::shell();
 }

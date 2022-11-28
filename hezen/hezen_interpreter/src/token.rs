@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use hezen_core::error::HezenLineInfo;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum TokenType {
     LeftParen,
     RightParen,
@@ -55,6 +55,31 @@ pub enum TokenType {
     Builtin,
 }
 
+impl PartialEq for TokenType {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::String(l0), Self::String(r0)) => l0 == r0,
+            (Self::Number(l0), Self::Number(r0)) => l0 == r0,
+            _ => core::mem::discriminant(self) == core::mem::discriminant(other),
+        }
+    }
+}
+
+impl std::hash::Hash for TokenType {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        core::mem::discriminant(self).hash(state);
+        match self {
+            Self::String(v) => v.hash(state),
+            Self::Number(v) => v.to_bits().hash(state),
+            _ => {}
+        }
+    }
+}
+
+impl Eq for TokenType {
+    
+}
+
 impl Display for TokenType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -104,11 +129,25 @@ impl Display for TokenType {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq)]
 pub struct Token {
     pub ty: TokenType,
     pub lexeme: String,
     pub position: HezenLineInfo,
+}
+
+impl std::hash::Hash for Token {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.ty.hash(state);
+        self.lexeme.hash(state);
+        self.position.hash(state);
+    }
+}
+
+impl PartialEq for Token {
+    fn eq(&self, other: &Self) -> bool {
+        self.ty == other.ty && self.lexeme == other.lexeme
+    }
 }
 
 impl Token {

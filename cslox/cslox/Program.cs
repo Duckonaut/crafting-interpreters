@@ -75,7 +75,7 @@ namespace cslox
             }
 
             Resolver resolver = new Resolver(interpreter);
-            resolver.Resolve(expression);
+            resolver.GlobalResolve(expression);
 
             if (hadError) return;
 
