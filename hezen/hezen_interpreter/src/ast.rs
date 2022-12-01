@@ -80,7 +80,7 @@ impl Display for Expr {
             Expr::Assign(name, value) => write!(
                 f,
                 "{}",
-                wrap_expr!(&*format!("assign {} ", name.lexeme), Some(value))
+                wrap_expr!(&*format!("assign {} ", name.lexeme), )
             ),
             Expr::Binary(left, op, right) => write!(
                 f,
