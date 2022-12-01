@@ -109,8 +109,6 @@ pub fn shell() {
 
         resolver.resolve(&ast);
 
-        drop(resolver);
-
         if !pre_run_errors.is_empty() {
             let mut buffer = String::new();
             pre_run_errors.print_details(&mut buffer, input).unwrap();

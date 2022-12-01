@@ -5,13 +5,13 @@ use std::{
     rc::Rc,
 };
 
-use hezen_core::error::HezenError;
+use hezen_core::error::{HezenError, HezenLineInfo};
 
 use crate::{
     ast::{Expr, Stmt},
     environment::{HezenEnvironment, HezenValue},
-    function::HezenCallable,
-    token::TokenType,
+    function::{HezenCallable, HezenNativeFunction},
+    token::{Token, TokenType},
 };
 
 #[derive(Debug)]
@@ -66,7 +66,100 @@ macro_rules! binary_math_op {
 
 impl Interpreter {
     pub fn new() -> Self {
-        let mut globals = Rc::new(HezenEnvironment::default());
+        let mut globals = HezenEnvironment::default();
+
+        globals.define(
+            Token::new(
+                TokenType::Builtin,
+                "clock".to_string(),
+                HezenLineInfo {
+                    line: 0,
+                    column: 0,
+                    file: "<builtin>".to_string(),
+                },
+            ),
+            HezenValue::NativeFunction(Rc::new(HezenNativeFunction::new(
+                Token::new(
+                    TokenType::Builtin,
+                    "clock".to_string(),
+                    HezenLineInfo {
+                        line: 0,
+                        column: 0,
+                        file: "<builtin>".to_string(),
+                    },
+                ),
+                0,
+                |_| {
+                    Ok(HezenValue::Number(
+                        std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .unwrap()
+                            .as_secs_f64(),
+                    ))
+                },
+            ))),
+            false,
+        );
+
+        globals.define(
+            Token::new(
+                TokenType::Builtin,
+                "print".to_string(),
+                HezenLineInfo {
+                    line: 0,
+                    column: 0,
+                    file: "<builtin>".to_string(),
+                },
+            ),
+            HezenValue::NativeFunction(Rc::new(HezenNativeFunction::new(
+                Token::new(
+                    TokenType::Builtin,
+                    "print".to_string(),
+                    HezenLineInfo {
+                        line: 0,
+                        column: 0,
+                        file: "<builtin>".to_string(),
+                    },
+                ),
+                1,
+                |args| {
+                    print!("{}", args[0]);
+                    Ok(HezenValue::Nil)
+                },
+            ))),
+            false,
+        );
+
+        globals.define(
+            Token::new(
+                TokenType::Builtin,
+                "println".to_string(),
+                HezenLineInfo {
+                    line: 0,
+                    column: 0,
+                    file: "<builtin>".to_string(),
+                },
+            ),
+            HezenValue::NativeFunction(Rc::new(HezenNativeFunction::new(
+                Token::new(
+                    TokenType::Builtin,
+                    "println".to_string(),
+                    HezenLineInfo {
+                        line: 0,
+                        column: 0,
+                        file: "<builtin>".to_string(),
+                    },
+                ),
+                1,
+                |args| {
+                    println!("{}", args[0]);
+                    Ok(HezenValue::Nil)
+                },
+            ))),
+            false,
+        );
+
+        let globals = Rc::new(globals);
 
         Self {
             globals: globals.clone(),
@@ -97,15 +190,56 @@ impl Interpreter {
                 Rc::new(HezenEnvironment::new(Some(self.environment.clone()))),
             ),
             Stmt::Class(_, _, _) => todo!(),
-            Stmt::Expression(_) => todo!(),
+            Stmt::Expression(expr) => self.evaluate(expr).map_err(HezenInterruption::Error),
             Stmt::Function(_, _, _) => todo!(),
-            Stmt::If(_, _, _) => todo!(),
-            Stmt::Var(_, _) => todo!(),
-            Stmt::VarMut(_, _) => todo!(),
-            Stmt::While(_, _) => todo!(),
-            Stmt::Return(_, _) => todo!(),
-            Stmt::Break => todo!(),
-            Stmt::Continue => todo!(),
+            Stmt::If(condition, then_block, else_block) => {
+                if self.evaluate(condition).map_err(HezenInterruption::Error)?.is_truthy() {
+                    self.execute(then_block)
+                } else if let Some(else_block) = else_block {
+                    self.execute(else_block)
+                } else {
+                    Ok(HezenValue::Nil)
+                }
+            },
+            Stmt::Var(name, initializer) => {
+                let value = if let Some(initializer) = initializer {
+                    self.evaluate(initializer).map_err(HezenInterruption::Error)?
+                } else {
+                    HezenValue::Nil
+                };
+
+                Rc::get_mut(&mut self.environment).unwrap().define(name.clone(), value, false);
+
+                Ok(HezenValue::Nil)
+            },
+            Stmt::VarMut(name, initializer) => {
+                let value = if let Some(initializer) = initializer {
+                    self.evaluate(initializer).map_err(HezenInterruption::Error)?
+                } else {
+                    HezenValue::Nil
+                };
+
+                Rc::get_mut(&mut self.environment).unwrap().define(name.clone(), value, true);
+
+                Ok(HezenValue::Nil)
+            },
+            Stmt::While(condition, body) => {
+                while self.evaluate(condition).map_err(HezenInterruption::Error)?.is_truthy() {
+                    self.execute(body)?;
+                }
+
+                Ok(HezenValue::Nil)
+            },
+            Stmt::Return(_, expr) => {
+                if let Some(expr) = expr {
+                    let value = self.evaluate(expr).map_err(HezenInterruption::Error)?;
+                    Err(HezenInterruption::Control(HezenControl::Return(value)))
+                } else {
+                    Err(HezenInterruption::Control(HezenControl::Return(HezenValue::Nil)))
+                }
+            }
+            Stmt::Break => Err(HezenInterruption::Control(HezenControl::Break)),
+            Stmt::Continue => Err(HezenInterruption::Control(HezenControl::Continue)),
         }
     }
 
@@ -276,16 +410,148 @@ impl Interpreter {
                     )),
                 }
             }
-            Expr::Get(_, _) => todo!(),
-            Expr::Grouping(_) => todo!(),
-            Expr::Literal(_) => todo!(),
-            Expr::Logical(_, _, _) => todo!(),
-            Expr::Self_(_) => todo!(),
-            Expr::Super(_, _) => todo!(),
-            Expr::Set(_, _, _) => todo!(),
-            Expr::Unary(_, _) => todo!(),
-            Expr::Variable(_) => todo!(),
+            Expr::Get(expr, token) => {
+                let value = self.evaluate(expr)?;
 
+                match value {
+                    HezenValue::Instance(instance) => {
+                        if let Some(value) = instance.get(&token.lexeme) {
+                            Ok(value)
+                        } else {
+                            Err(HezenError::runtime(
+                                token.position.file.clone(),
+                                token.position.line,
+                                token.position.column,
+                                format!("Undefined property '{}'", token.lexeme),
+                            ))
+                        }
+                    }
+                    _ => Err(HezenError::runtime(
+                        token.position.file.clone(),
+                        token.position.line,
+                        token.position.column,
+                        format!(
+                            "Only instances have properties, '{}' does not",
+                            value.type_name()
+                        ),
+                    )),
+                }
+            }
+            Expr::Grouping(expr) => self.evaluate(expr),
+            Expr::Literal(l) => Ok(l.into()),
+            Expr::Logical(left, op, right) => {
+                let left = self.evaluate(left)?;
+
+                match op.ty {
+                    TokenType::Or => {
+                        if left.is_truthy() {
+                            Ok(left)
+                        } else {
+                            self.evaluate(right)
+                        }
+                    }
+                    TokenType::And => {
+                        if !left.is_truthy() {
+                            Ok(left)
+                        } else {
+                            self.evaluate(right)
+                        }
+                    }
+                    _ => Err(HezenError::runtime(
+                        op.position.file.clone(),
+                        op.position.line,
+                        op.position.column,
+                        format!("Invalid logical operator '{}'. Don't know how you did it, but that's a parser bug", op.lexeme),
+                    )),
+                }
+            }
+            Expr::Self_(token) => self.get(token, expr),
+            Expr::Super(s, accessor) => {
+                let distance = self.locals.get(expr).unwrap();
+
+                let superclass = match self.environment.get_at(*distance, s) {
+                    Ok(HezenValue::Class(class)) => class,
+                    _ => {
+                        return Err(HezenError::runtime(
+                            s.position.file.clone(),
+                            s.position.line,
+                            s.position.column,
+                            "Can only access superclass from a subclass".to_string(),
+                        ))
+                    }
+                };
+
+                let object = match self.environment.get_at(
+                    distance - 1,
+                    &Token::new(TokenType::Self_, "self".into(), s.position.clone()),
+                )? {
+                    HezenValue::Instance(instance) => instance,
+                    _ => {
+                        return Err(HezenError::runtime(
+                            s.position.file.clone(),
+                            s.position.line,
+                            s.position.column,
+                            "Can only access superclass from a subclass".to_string(),
+                        ))
+                    }
+                };
+
+                let method = superclass.find_method(&accessor.lexeme);
+
+                match method {
+                    Some(method) => Ok(HezenValue::Function(Rc::new(method.bind(object)))),
+                    None => Err(HezenError::runtime(
+                        accessor.position.file.clone(),
+                        accessor.position.line,
+                        accessor.position.column,
+                        format!("Undefined property '{}'", accessor.lexeme),
+                    )),
+                }
+            }
+            Expr::Set(obj, name, value) => {
+                let obj = self.evaluate(obj)?;
+
+                match obj {
+                    HezenValue::Instance(mut instance) => {
+                        let value = self.evaluate(value)?;
+
+                        Rc::get_mut(&mut instance)
+                            .unwrap()
+                            .set(name.lexeme.clone(), value.clone());
+
+                        Ok(value)
+                    }
+                    _ => Err(HezenError::runtime(
+                        name.position.file.clone(),
+                        name.position.line,
+                        name.position.column,
+                        format!("Only instances have fields, '{}' does not", obj.type_name()),
+                    )),
+                }
+            }
+            Expr::Unary(op, right) => {
+                let right = self.evaluate(right)?;
+
+                match op.ty {
+                    TokenType::Bang => Ok(HezenValue::Bool(!right.is_truthy())),
+                    TokenType::Minus => match right {
+                        HezenValue::Number(n) => Ok(HezenValue::Number(-n)),
+                        _ => Err(HezenError::runtime(
+                            op.position.file.clone(),
+                            op.position.line,
+                            op.position.column,
+                            format!("Operand must be a number, not '{}'", right.type_name()),
+                        )),
+                    },
+                    _ => Err(HezenError::runtime(
+                        op.position.file.clone(),
+                        op.position.line,
+                        op.position.column,
+                        format!("Invalid unary operator '{}'. Don't know how you did it, but that's a parser bug", op.lexeme),
+                    )),
+                }
+            }
+            Expr::Variable(name) => self.get(name, expr),
         }
     }
 
@@ -314,5 +580,20 @@ impl Interpreter {
         self.environment = prev;
 
         Ok(value)
+    }
+
+    fn get(&self, name: &Token, expr: &Expr) -> Result<HezenValue, HezenError> {
+        if let Some(distance) = self.locals.get(expr) {
+            self.environment.get_at(*distance, name)
+        } else if let Ok(value) = self.globals.get(name) {
+            Ok(value)
+        } else {
+            Err(HezenError::runtime(
+                name.position.file.clone(),
+                name.position.line,
+                name.position.column,
+                format!("Undefined variable '{}'", name.lexeme),
+            ))
+        }
     }
 }

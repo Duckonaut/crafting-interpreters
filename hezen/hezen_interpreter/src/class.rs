@@ -23,6 +23,30 @@ pub struct HezenClass {
     pub methods: HashMap<String, HezenFunction>,
 }
 
+impl HezenClass {
+    pub fn new(
+        name: String,
+        superclass: Option<Rc<HezenClass>>,
+        methods: HashMap<String, HezenFunction>,
+    ) -> Self {
+        Self {
+            name,
+            superclass,
+            methods,
+        }
+    }
+
+    pub fn find_method(&self, name: &str) -> Option<HezenFunction> {
+        match self.methods.get(name.into()) {
+            Some(m) => Some(m.clone()),
+            None => match &self.superclass {
+                Some(sc) => sc.find_method(name),
+                None => None,
+            },
+        }
+    }
+}
+
 impl PartialEq for HezenClass {
     fn eq(&self, other: &Self) -> bool {
         self.name == other.name

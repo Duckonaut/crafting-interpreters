@@ -5,6 +5,7 @@ use hezen_core::error::HezenError;
 use crate::{
     ast::Stmt,
     environment::{HezenEnvironment, HezenValue},
+    instance::HezenInstance,
     interpreter::{HezenControl, HezenInterruption, Interpreter},
     token::Token,
 };
@@ -36,6 +37,45 @@ pub struct HezenFunction {
     initializer: bool,
 }
 
+impl HezenFunction {
+    pub fn new(
+        name: Token,
+        parameters: Vec<Token>,
+        body: Stmt,
+        closure: Rc<HezenEnvironment>,
+        initializer: bool,
+    ) -> Self {
+        Self {
+            name,
+            parameters,
+            body,
+            closure,
+            initializer,
+        }
+    }
+
+    pub fn bind(&self, instance: Rc<HezenInstance>) -> Self {
+        let mut environment = HezenEnvironment::new(Some(Rc::clone(&self.closure)));
+        environment.define(
+            Token::new(
+                crate::token::TokenType::Builtin,
+                "self".into(),
+                self.name.position.clone(),
+            ),
+            HezenValue::Instance(instance),
+            false,
+        );
+
+        Self {
+            name: self.name.clone(),
+            parameters: self.parameters.clone(),
+            body: self.body.clone(),
+            closure: Rc::new(environment),
+            initializer: self.initializer,
+        }
+    }
+}
+
 impl HezenCallable for HezenFunction {
     fn call(
         &self,
@@ -45,7 +85,11 @@ impl HezenCallable for HezenFunction {
         let mut environment = Rc::new(HezenEnvironment::new(Some(self.closure.clone())));
 
         for (parameter, argument) in self.parameters.iter().zip(arguments) {
-            Rc::get_mut(&mut environment).unwrap().define(parameter.clone(), argument.clone(), false);
+            Rc::get_mut(&mut environment).unwrap().define(
+                parameter.clone(),
+                argument.clone(),
+                false,
+            );
         }
 
         let result = interpreter.execute_block(
@@ -103,7 +147,21 @@ impl PartialEq for HezenFunction {
 pub struct HezenNativeFunction {
     pub name: Token,
     pub arity: usize,
-    pub function: fn(&[HezenValue]) -> HezenValue,
+    pub function: fn(&[HezenValue]) -> Result<HezenValue, HezenError>,
+}
+
+impl HezenNativeFunction {
+    pub fn new(
+        name: Token,
+        arity: usize,
+        function: fn(&[HezenValue]) -> Result<HezenValue, HezenError>,
+    ) -> Self {
+        Self {
+            name,
+            arity,
+            function,
+        }
+    }
 }
 
 impl std::fmt::Debug for HezenNativeFunction {
@@ -118,10 +176,23 @@ impl std::fmt::Debug for HezenNativeFunction {
 impl HezenCallable for HezenNativeFunction {
     fn call(
         &self,
-        interpreter: &mut Interpreter,
+        _interpreter: &mut Interpreter,
         arguments: &[HezenValue],
     ) -> Result<HezenValue, HezenError> {
-        todo!()
+        if arguments.len() != self.arity {
+            return Err(HezenError::runtime(
+                self.name.position.file.clone(),
+                self.name.position.line,
+                self.name.position.column,
+                format!(
+                    "Expected {} arguments but got {}.",
+                    self.arity,
+                    arguments.len()
+                ),
+            ));
+        }
+
+        (self.function)(arguments)
     }
 
     fn arity(&self) -> usize {

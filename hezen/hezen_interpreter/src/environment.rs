@@ -6,7 +6,7 @@ use crate::{
     class::HezenClass,
     function::{HezenFunction, HezenNativeFunction},
     instance::HezenInstance,
-    token::Token,
+    token::Token, ast::Literal,
 };
 
 #[derive(Debug, Default)]
@@ -194,6 +194,19 @@ impl HezenValue {
             HezenValue::NativeFunction(_) => format!("native function"),
         }
     }
+
+    pub fn is_truthy(&self) -> bool {
+        match self {
+            HezenValue::Nil => false,
+            HezenValue::Bool(b) => *b,
+            HezenValue::Number(n) => *n != 0.0,
+            HezenValue::String(s) => !s.is_empty(),
+            HezenValue::Function(_) => true,
+            HezenValue::Class(_) => true,
+            HezenValue::Instance(_) => true,
+            HezenValue::NativeFunction(_) => true,
+        }
+    }
 }
 
 impl Display for HezenValue {
@@ -207,6 +220,17 @@ impl Display for HezenValue {
             HezenValue::Class(hc) => write!(f, "<class {}>", hc.name),
             HezenValue::Instance(hi) => write!(f, "<instance {}>", hi.class.name),
             HezenValue::NativeFunction(nf) => write!(f, "<native function {}>", nf.name.lexeme),
+        }
+    }
+}
+
+impl From<&Literal> for HezenValue {
+    fn from(literal: &Literal) -> Self {
+        match literal {
+            Literal::Nil => Self::Nil,
+            Literal::Bool(b) => Self::Bool(*b),
+            Literal::Number(n) => Self::Number(*n),
+            Literal::String(s) => Self::String(s.clone()),
         }
     }
 }

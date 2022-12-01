@@ -1,11 +1,11 @@
 use std::{collections::HashMap, rc::Rc};
 
-use crate::{class::HezenClass, environment::HezenVariable};
+use crate::{class::HezenClass, environment::{HezenVariable, HezenValue}};
 
 #[derive(Debug, Clone)]
 pub struct HezenInstance {
     pub class: Rc<HezenClass>,
-    pub fields: HashMap<String, HezenVariable>,
+    pub fields: HashMap<String, HezenValue>,
 }
 
 impl PartialEq for HezenInstance {
@@ -24,5 +24,13 @@ impl HezenInstance {
             class,
             fields: HashMap::default(),
         }
+    }
+
+    pub fn get(&self, name: &str) -> Option<HezenValue> {
+        self.fields.get(name).cloned()
+    }
+
+    pub fn set(&mut self, name: String, value: HezenValue) {
+        self.fields.insert(name, value);
     }
 }
