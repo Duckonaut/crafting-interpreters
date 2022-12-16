@@ -70,7 +70,7 @@ impl<'a> Resolver<'a> {
     }
 
     fn resolve_local(&mut self, name: &Token, expr: &Expr) {
-        for (i, scope) in self.scopes.iter().enumerate().rev() {
+        for (i, scope) in self.scopes.iter().rev().enumerate() {
             if scope.contains_key(&name.lexeme) {
                 self.interpreter.resolve(expr, i);
                 return;
@@ -84,13 +84,23 @@ impl<'a> Resolver<'a> {
 
         self.begin_scope();
 
-        if let Stmt::Function(_, params, body) = function {
+        if let Stmt::Function(name, params, body) = function {
             for param in params {
                 self.declare(param);
                 self.define(param);
             }
 
-            self.resolve_stmt(body);
+            if let Stmt::Block(statements) = &**body {
+                self.internal_resolve(statements);
+            }
+            else {
+                self.errors.add(HezenError::runtime(
+                    name.position.file.clone(),
+                    name.position.line,
+                    name.position.column,
+                    "Expected block statement in function body".into(),
+                ));
+            }
         } else {
             unreachable!()
         }

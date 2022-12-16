@@ -160,3 +160,11 @@ impl Display for HezenErrorList {
 }
 
 impl Error for HezenErrorList {}
+
+impl From<HezenError> for HezenErrorList {
+    fn from(error: HezenError) -> Self {
+        Self {
+            errors: vec![error],
+        }
+    }
+}

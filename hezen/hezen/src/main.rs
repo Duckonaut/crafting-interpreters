@@ -1,12 +1,15 @@
 use anyhow::Result;
 use clap::Parser;
+use hezen_core::Verbosity;
 use std::{io::Read, path::PathBuf};
 
 #[derive(Parser, Clone, Debug)]
 #[command(version = "1.0", about = "The Hezen Language")]
 struct Args {
+    #[arg(short, long, help = "The verbosity level")]
+    verbosity: Option<u8>,
     #[command(subcommand)]
-    subcmd: SubCommand,
+    subcmd: Option<SubCommand>,
 }
 
 #[derive(Parser, Clone, Debug)]
@@ -20,19 +23,41 @@ enum SubCommand {
 fn main() -> Result<()> {
     let args = Args::parse();
 
+    let verbosity = get_verbosity(args.verbosity);
+
     match args.subcmd {
-        SubCommand::Run { file } => run(file)?,
-        SubCommand::Shell => shell(),
+        Some(SubCommand::Run { file }) => run(file, verbosity)?,
+        Some(SubCommand::Shell) => shell(),
+        None => run(Some("../classes-e2e.hez".into()), get_verbosity(None))?,
     }
 
     Ok(())
 }
 
-fn run(file: Option<PathBuf>) -> Result<()> {
+fn get_verbosity(level: Option<u8>) -> Verbosity {
+    let mut v = Verbosity {
+        lexer: false,
+        intermediate: false,
+    };
+
+    if let Some(level) = level {
+        if level > 0 {
+            v.intermediate = true;
+        }
+
+        if level > 1 {
+            v.lexer = true;
+        }
+    }
+
+    v
+}
+
+fn run(file: Option<PathBuf>, verbosity: Verbosity) -> Result<()> {
     if let Some(file) = file {
         let filename = file.to_str().unwrap().to_string();
         let code = std::fs::read_to_string(file)?;
-        let result = hezen_runtime::run(filename, code.clone());
+        let result = hezen_runtime::run(filename, code.clone(), verbosity);
 
         if let Err(err) = result {
             let mut buffer = String::new();
@@ -44,7 +69,7 @@ fn run(file: Option<PathBuf>) -> Result<()> {
         let mut stdin = stdin.lock();
         let mut code = String::new();
         stdin.read_to_string(&mut code)?;
-        let result = hezen_runtime::run(String::from("<stdin>"), code.clone());
+        let result = hezen_runtime::run(String::from("<stdin>"), code.clone(), verbosity);
 
         if let Err(err) = result {
             let mut buffer = String::new();

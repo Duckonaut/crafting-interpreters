@@ -1,11 +1,16 @@
-use std::{collections::HashMap, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::{class::HezenClass, environment::{HezenVariable, HezenValue}};
+use crate::{class::HezenClass, environment::HezenValue};
 
 #[derive(Debug, Clone)]
-pub struct HezenInstance {
+struct HezenInstance {
     pub class: Rc<HezenClass>,
     pub fields: HashMap<String, HezenValue>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct HezenInstanceHandle {
+    instance: Rc<RefCell<HezenInstance>>,
 }
 
 impl PartialEq for HezenInstance {
@@ -18,19 +23,33 @@ impl PartialEq for HezenInstance {
     }
 }
 
-impl HezenInstance {
+impl HezenInstanceHandle {
     pub fn new(class: Rc<HezenClass>) -> Self {
         Self {
-            class,
-            fields: HashMap::default(),
+            instance: Rc::new(RefCell::new(HezenInstance {
+                class,
+                fields: HashMap::default(),
+            })),
         }
     }
 
     pub fn get(&self, name: &str) -> Option<HezenValue> {
-        self.fields.get(name).cloned()
+        if let Some(v) = self.instance.borrow().fields.get(name) {
+            Some(v.clone())
+        } else {
+            self.instance
+                .borrow()
+                .class
+                .find_method(name)
+                .map(|m| HezenValue::Function(Rc::new(m.bind(self.clone()))))
+        }
     }
 
-    pub fn set(&mut self, name: String, value: HezenValue) {
-        self.fields.insert(name, value);
+    pub fn set(&self, name: String, value: HezenValue) {
+        self.instance.borrow_mut().fields.insert(name, value);
+    }
+
+    pub fn type_name(&self) -> String {
+        self.instance.borrow().class.name.clone()
     }
 }

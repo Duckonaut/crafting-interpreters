@@ -270,7 +270,6 @@ namespace cslox
         public object? VisitFunctionStmt(Function function)
         {
             LoxFunction loxFunction = new LoxFunction(function, env, false);
-            env.Define(function.name, loxFunction);
             return env.Define(function.name, loxFunction);
         }
 

@@ -7,3 +7,4 @@ edition = "2021"
 anyhow = "1.0"
 clap = { version = "4.0.27", features = ["derive"] }
 hezen_runtime = { path = "../hezen_runtime" }
+hezen_core = { path = "../hezen_core" }

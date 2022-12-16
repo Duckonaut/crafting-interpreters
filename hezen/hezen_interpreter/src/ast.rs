@@ -49,9 +49,7 @@ impl std::hash::Hash for Literal {
     }
 }
 
-impl Eq for Literal {
-    
-}
+impl Eq for Literal {}
 
 #[derive(Debug, Clone)]
 pub enum Stmt {
@@ -80,7 +78,7 @@ impl Display for Expr {
             Expr::Assign(name, value) => write!(
                 f,
                 "{}",
-                wrap_expr!(&*format!("assign {} ", name.lexeme), )
+                wrap_expr!(&*format!("assign {} {}", name.lexeme, value),)
             ),
             Expr::Binary(left, op, right) => write!(
                 f,

@@ -41,6 +41,7 @@ class Mario < Character {
         println("Jump!");
     }
 }
+println("defined");
 
 var mario = Mario();
 var koopa = Character("Koopa");

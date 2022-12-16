@@ -251,6 +251,8 @@ impl<'a> Parser<'a> {
             None
         };
 
+        self.consume(TokenType::Semicolon, "Expected ';' after loop condition.")?;
+
         let increment = if !self.check(TokenType::RightParen) {
             Some(self.expression()?)
         } else {

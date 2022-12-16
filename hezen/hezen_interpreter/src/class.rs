@@ -1,11 +1,11 @@
-use std::{collections::HashMap, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use hezen_core::error::HezenError;
 
 use crate::{
     environment::HezenValue,
     function::{HezenCallable, HezenFunction},
-    instance::HezenInstance,
+    instance::HezenInstanceHandle,
     interpreter::Interpreter,
 };
 
@@ -20,14 +20,14 @@ pub enum ClassType {
 pub struct HezenClass {
     pub name: String,
     pub superclass: Option<Rc<HezenClass>>,
-    pub methods: HashMap<String, HezenFunction>,
+    pub methods: HashMap<String, Rc<HezenFunction>>,
 }
 
 impl HezenClass {
     pub fn new(
         name: String,
         superclass: Option<Rc<HezenClass>>,
-        methods: HashMap<String, HezenFunction>,
+        methods: HashMap<String, Rc<HezenFunction>>,
     ) -> Self {
         Self {
             name,
@@ -36,8 +36,8 @@ impl HezenClass {
         }
     }
 
-    pub fn find_method(&self, name: &str) -> Option<HezenFunction> {
-        match self.methods.get(name.into()) {
+    pub fn find_method(&self, name: &str) -> Option<Rc<HezenFunction>> {
+        match self.methods.get(name) {
             Some(m) => Some(m.clone()),
             None => match &self.superclass {
                 Some(sc) => sc.find_method(name),
@@ -55,17 +55,22 @@ impl PartialEq for HezenClass {
     }
 }
 
-impl HezenCallable for Rc<HezenClass>
-{
+impl HezenCallable for Rc<HezenClass> {
     fn call(
         &self,
         interpreter: &mut Interpreter,
         arguments: &[HezenValue],
     ) -> Result<HezenValue, HezenError> {
-        if let Some(init) = self.methods.get("init") {
-            init.call(interpreter, arguments)
+        if let Some(init) = self.find_method("init") {
+            let instance = HezenInstanceHandle::new(self.clone());
+
+            init.bind(instance.clone()).call(interpreter, arguments)?;
+
+            Ok(HezenValue::Instance(instance))
         } else {
-            Ok(HezenValue::Instance(Rc::new(HezenInstance::new(self.clone()))))
+            Ok(HezenValue::Instance(
+                HezenInstanceHandle::new(self.clone()),
+            ))
         }
     }
 

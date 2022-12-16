@@ -1,5 +1,4 @@
 use std::{
-    cell::RefCell,
     collections::HashMap,
     fmt::{Display, Formatter},
     rc::Rc,
@@ -9,8 +8,9 @@ use hezen_core::error::{HezenError, HezenLineInfo};
 
 use crate::{
     ast::{Expr, Stmt},
-    environment::{HezenEnvironment, HezenValue},
-    function::{HezenCallable, HezenNativeFunction},
+    class::HezenClass,
+    environment::{HezenEnvironmentHandle, HezenValue},
+    function::{HezenCallable, HezenFunction, HezenNativeFunction},
     token::{Token, TokenType},
 };
 
@@ -39,8 +39,8 @@ pub(crate) enum HezenInterruption {
 
 #[derive(Debug)]
 pub struct Interpreter {
-    pub globals: Rc<HezenEnvironment>,
-    environment: Rc<HezenEnvironment>,
+    pub globals: HezenEnvironmentHandle,
+    environment: HezenEnvironmentHandle,
     locals: HashMap<Expr, usize>,
 }
 
@@ -66,7 +66,7 @@ macro_rules! binary_math_op {
 
 impl Interpreter {
     pub fn new() -> Self {
-        let mut globals = HezenEnvironment::default();
+        let mut globals = HezenEnvironmentHandle::default();
 
         globals.define(
             Token::new(
@@ -159,8 +159,6 @@ impl Interpreter {
             false,
         );
 
-        let globals = Rc::new(globals);
-
         Self {
             globals: globals.clone(),
             environment: globals,
@@ -174,10 +172,15 @@ impl Interpreter {
 
     pub fn interpret(&mut self, statements: &[Stmt]) -> Result<(), HezenError> {
         for statement in statements {
-            self.execute(statement).map_err(|i| match i {
-                HezenInterruption::Control(c) => panic!("Uncaught {}, investigate resolver", c),
-                HezenInterruption::Error(why) => why,
-            })?;
+            let result = self.execute(statement);
+
+            if let Err(HezenInterruption::Error(error)) = result {
+                return Err(error);
+            }
+            
+            if let Err(HezenInterruption::Control(_)) = result {
+                panic!("Control flow should not be returned from the top level");
+            }
         }
 
         Ok(())
@@ -185,57 +188,165 @@ impl Interpreter {
 
     pub(crate) fn execute(&mut self, stmt: &Stmt) -> Result<HezenValue, HezenInterruption> {
         match stmt {
-            Stmt::Block(stmts) => self.execute_block(
-                stmts.iter().collect(),
-                Rc::new(HezenEnvironment::new(Some(self.environment.clone()))),
-            ),
-            Stmt::Class(_, _, _) => todo!(),
+            Stmt::Block(stmts) => {
+                self.execute_block(stmts.iter().collect(), self.environment.clone())
+            }
+            Stmt::Class(name, superclass, methods) => {
+                let superclass = if let Some(superclass) = superclass {
+                    match self
+                        .evaluate(superclass)
+                        .map_err(HezenInterruption::Error)?
+                    {
+                        HezenValue::Class(superclass) => Some(superclass),
+                        x => {
+                            return Err(HezenInterruption::Error(HezenError::runtime(
+                                name.position.file.clone(),
+                                name.position.line,
+                                name.position.column,
+                                format!("Superclass must be a class, not '{}'", x.type_name()),
+                            )))
+                        }
+                    }
+                } else {
+                    None
+                };
+
+                self.environment.define(name.clone(), HezenValue::Nil, true);
+
+                if superclass.is_some() {
+                    self.environment = HezenEnvironmentHandle::new(Some(self.environment.clone()));
+                    self.environment.define(
+                        Token::new(
+                            TokenType::Builtin,
+                            "super".to_string(),
+                            HezenLineInfo {
+                                line: 0,
+                                column: 0,
+                                file: "<builtin>".to_string(),
+                            },
+                        ),
+                        HezenValue::Class(superclass.as_ref().unwrap().clone()),
+                        false,
+                    );
+                }
+
+                let methods = methods
+                    .iter()
+                    .map(|method| {
+                        if let Stmt::Function(name, params, body) = method {
+                            let function = Rc::new(HezenFunction::new(
+                                name.clone(),
+                                params.clone(),
+                                *body.clone(),
+                                self.environment.clone(),
+                                name.lexeme == "init",
+                            ));
+
+                            (name.lexeme.clone(), function)
+                        } else {
+                            unreachable!()
+                        }
+                    })
+                    .collect::<HashMap<_, _>>();
+
+                if superclass.is_some() {
+                    self.environment = self.environment.clone().enclosing().unwrap();
+                }
+
+                let class = HezenValue::Class(Rc::new(HezenClass::new(
+                    name.lexeme.clone(),
+                    superclass,
+                    methods,
+                )));
+
+                self.environment
+                    .assign(&name.clone(), class.clone())
+                    .map_err(HezenInterruption::Error)?;
+
+                Ok(class)
+            }
             Stmt::Expression(expr) => self.evaluate(expr).map_err(HezenInterruption::Error),
-            Stmt::Function(_, _, _) => todo!(),
+            Stmt::Function(name, parameters, body) => {
+                let function = HezenValue::Function(Rc::new(HezenFunction::new(
+                    name.clone(),
+                    parameters.clone(),
+                    *body.clone(),
+                    self.environment.clone(),
+                    false,
+                )));
+
+                self.environment.define(name.clone(), function, false);
+
+                Ok(HezenValue::Nil)
+            }
             Stmt::If(condition, then_block, else_block) => {
-                if self.evaluate(condition).map_err(HezenInterruption::Error)?.is_truthy() {
+                if self
+                    .evaluate(condition)
+                    .map_err(HezenInterruption::Error)?
+                    .is_truthy()
+                {
                     self.execute(then_block)
                 } else if let Some(else_block) = else_block {
                     self.execute(else_block)
                 } else {
                     Ok(HezenValue::Nil)
                 }
-            },
+            }
             Stmt::Var(name, initializer) => {
                 let value = if let Some(initializer) = initializer {
-                    self.evaluate(initializer).map_err(HezenInterruption::Error)?
+                    self.evaluate(initializer)
+                        .map_err(HezenInterruption::Error)?
                 } else {
                     HezenValue::Nil
                 };
 
-                Rc::get_mut(&mut self.environment).unwrap().define(name.clone(), value, false);
+                self.environment.define(name.clone(), value, false);
 
                 Ok(HezenValue::Nil)
-            },
+            }
             Stmt::VarMut(name, initializer) => {
                 let value = if let Some(initializer) = initializer {
-                    self.evaluate(initializer).map_err(HezenInterruption::Error)?
+                    self.evaluate(initializer)
+                        .map_err(HezenInterruption::Error)?
                 } else {
                     HezenValue::Nil
                 };
 
-                Rc::get_mut(&mut self.environment).unwrap().define(name.clone(), value, true);
+                self.environment.define(name.clone(), value, true);
 
                 Ok(HezenValue::Nil)
-            },
+            }
             Stmt::While(condition, body) => {
-                while self.evaluate(condition).map_err(HezenInterruption::Error)?.is_truthy() {
-                    self.execute(body)?;
+                while self
+                    .evaluate(condition)
+                    .map_err(HezenInterruption::Error)?
+                    .is_truthy()
+                {
+                    let result = self.execute(body);
+
+                    if let Err(HezenInterruption::Control(HezenControl::Break)) = result {
+                        break;
+                    }
+
+                    if let Err(HezenInterruption::Control(HezenControl::Continue)) = result {
+                        continue;
+                    }
+
+                    if let Err(HezenInterruption::Error(_)) = result {
+                        return result;
+                    }
                 }
 
                 Ok(HezenValue::Nil)
-            },
+            }
             Stmt::Return(_, expr) => {
                 if let Some(expr) = expr {
                     let value = self.evaluate(expr).map_err(HezenInterruption::Error)?;
                     Err(HezenInterruption::Control(HezenControl::Return(value)))
                 } else {
-                    Err(HezenInterruption::Control(HezenControl::Return(HezenValue::Nil)))
+                    Err(HezenInterruption::Control(HezenControl::Return(
+                        HezenValue::Nil,
+                    )))
                 }
             }
             Stmt::Break => Err(HezenInterruption::Control(HezenControl::Break)),
@@ -249,14 +360,11 @@ impl Interpreter {
                 if self.locals.contains_key(expr) {
                     if self
                         .environment
-                        .mutable_at(*self.locals.get(expr).unwrap(), &name)
+                        .mutable_at(*self.locals.get(expr).unwrap(), name)
                     {
                         let value = self.evaluate(value)?;
-                        Rc::get_mut(&mut self.environment).unwrap().assign_at(
-                            *self.locals.get(expr).unwrap(),
-                            &name,
-                            value,
-                        )?;
+                        self.environment
+                            .assign_at(*self.locals.get(expr).unwrap(), name, value)?;
                         Ok(HezenValue::Nil)
                     } else {
                         Err(HezenError::runtime(
@@ -266,11 +374,9 @@ impl Interpreter {
                             format!("Cannot assign to immutable variable '{}'", name.lexeme),
                         ))
                     }
-                } else if self.globals.mutable(&name) {
+                } else if self.globals.mutable(name) {
                     let value = self.evaluate(value)?;
-                    Rc::get_mut(&mut self.globals)
-                        .unwrap()
-                        .assign(&name, value)?;
+                    self.globals.assign(name, value)?;
                     Ok(HezenValue::Nil)
                 } else {
                     Err(HezenError::runtime(
@@ -512,12 +618,10 @@ impl Interpreter {
                 let obj = self.evaluate(obj)?;
 
                 match obj {
-                    HezenValue::Instance(mut instance) => {
+                    HezenValue::Instance(instance) => {
                         let value = self.evaluate(value)?;
 
-                        Rc::get_mut(&mut instance)
-                            .unwrap()
-                            .set(name.lexeme.clone(), value.clone());
+                        instance.set(name.lexeme.clone(), value.clone());
 
                         Ok(value)
                     }
@@ -558,7 +662,7 @@ impl Interpreter {
     pub(crate) fn execute_block(
         &mut self,
         stmts: Vec<&Stmt>,
-        new_env: Rc<HezenEnvironment>,
+        new_env: HezenEnvironmentHandle,
     ) -> Result<HezenValue, HezenInterruption> {
         let prev = self.environment.clone();
 

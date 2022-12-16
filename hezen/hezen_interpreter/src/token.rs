@@ -183,10 +183,6 @@ impl Tokens {
     pub fn get(&self, index: usize) -> &Token {
         &self.list[index]
     }
-
-    pub fn len(&self) -> usize {
-        self.list.len()
-    }
 }
 
 impl Display for Tokens {

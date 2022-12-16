@@ -1,11 +1,11 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{rc::Rc, cell::RefCell};
 
 use hezen_core::error::HezenError;
 
 use crate::{
     ast::Stmt,
-    environment::{HezenEnvironment, HezenValue},
-    instance::HezenInstance,
+    environment::{HezenEnvironmentHandle, HezenValue},
+    instance::HezenInstanceHandle,
     interpreter::{HezenControl, HezenInterruption, Interpreter},
     token::Token,
 };
@@ -33,7 +33,7 @@ pub struct HezenFunction {
     pub name: Token,
     pub parameters: Vec<Token>,
     pub body: Stmt,
-    closure: Rc<HezenEnvironment>,
+    closure: HezenEnvironmentHandle,
     initializer: bool,
 }
 
@@ -42,7 +42,7 @@ impl HezenFunction {
         name: Token,
         parameters: Vec<Token>,
         body: Stmt,
-        closure: Rc<HezenEnvironment>,
+        closure: HezenEnvironmentHandle,
         initializer: bool,
     ) -> Self {
         Self {
@@ -54,8 +54,8 @@ impl HezenFunction {
         }
     }
 
-    pub fn bind(&self, instance: Rc<HezenInstance>) -> Self {
-        let mut environment = HezenEnvironment::new(Some(Rc::clone(&self.closure)));
+    pub fn bind(&self, instance: HezenInstanceHandle) -> Self {
+        let mut environment = HezenEnvironmentHandle::new(Some(self.closure.clone()));
         environment.define(
             Token::new(
                 crate::token::TokenType::Builtin,
@@ -70,7 +70,7 @@ impl HezenFunction {
             name: self.name.clone(),
             parameters: self.parameters.clone(),
             body: self.body.clone(),
-            closure: Rc::new(environment),
+            closure: environment,
             initializer: self.initializer,
         }
     }
@@ -82,15 +82,13 @@ impl HezenCallable for HezenFunction {
         interpreter: &mut Interpreter,
         arguments: &[HezenValue],
     ) -> Result<HezenValue, HezenError> {
-        let mut environment = Rc::new(HezenEnvironment::new(Some(self.closure.clone())));
+        let mut environment = HezenEnvironmentHandle::new(Some(self.closure.clone()));
 
         for (parameter, argument) in self.parameters.iter().zip(arguments) {
-            Rc::get_mut(&mut environment).unwrap().define(
-                parameter.clone(),
-                argument.clone(),
-                false,
-            );
+            environment.define(parameter.clone(), argument.clone(), false);
         }
+
+        environment = HezenEnvironmentHandle::new(Some(environment));
 
         let result = interpreter.execute_block(
             match &self.body {
@@ -102,22 +100,26 @@ impl HezenCallable for HezenFunction {
 
         if let Err(HezenInterruption::Control(HezenControl::Return(value))) = result {
             if self.initializer {
-                return Ok(self.closure.get(&Token::new(
+                return self.closure.get(&Token::new(
                     crate::token::TokenType::Self_,
                     "self".into(),
                     self.name.position.clone(),
-                ))?);
+                ));
             }
 
             return Ok(value);
         }
 
+        if let Err(HezenInterruption::Error(error)) = result {
+            return Err(error);
+        }
+
         if self.initializer {
-            return Ok(self.closure.get(&Token::new(
+            return self.closure.get(&Token::new(
                 crate::token::TokenType::Self_,
                 "self".into(),
                 self.name.position.clone(),
-            ))?);
+            ));
         }
 
         result.map_err(|i| match i {

@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use hezen_core::error::HezenErrorList;
+use hezen_core::{error::HezenErrorList, Verbosity};
 
 mod ast;
 mod class;
@@ -13,11 +13,8 @@ mod parser;
 mod resolver;
 mod token;
 
-pub fn run(filename: String, code: String) -> Result<(), HezenErrorList> {
+pub fn run(filename: String, code: String, verbosity: Verbosity) -> Result<(), HezenErrorList> {
     let mut pre_run_errors = HezenErrorList::default();
-
-    println!("Running file {}", filename);
-    println!("Code:\n{}", code);
 
     let lexer = lexer::Lexer::new(filename, code, &mut pre_run_errors);
 
@@ -27,7 +24,9 @@ pub fn run(filename: String, code: String) -> Result<(), HezenErrorList> {
         return Err(pre_run_errors);
     }
 
-    println!("Tokens: {}", tokens);
+    if verbosity.lexer {
+        println!("Tokens: {}", tokens);
+    }
 
     let parser = parser::Parser::new(tokens, &mut pre_run_errors);
 
@@ -37,8 +36,11 @@ pub fn run(filename: String, code: String) -> Result<(), HezenErrorList> {
         return Err(pre_run_errors);
     }
 
-    for node in ast.iter() {
-        println!("{}", node);
+    if verbosity.intermediate {
+        println!("AST:");
+        for node in ast.iter() {
+            println!("{}", node);
+        }
     }
 
     let mut interpreter = interpreter::Interpreter::new();
@@ -49,6 +51,12 @@ pub fn run(filename: String, code: String) -> Result<(), HezenErrorList> {
 
     if !pre_run_errors.is_empty() {
         return Err(pre_run_errors);
+    }
+
+    let result = interpreter.interpret(&ast);
+
+    if let Err(error) = result {
+        return Err(HezenErrorList::from(error));
     }
 
     Ok(())
@@ -119,7 +127,9 @@ pub fn shell() {
         let result = interpreter.interpret(&ast);
 
         if let Err(error) = result {
-            println!("{}", error);
+            let mut buffer = String::new();
+            error.print_details(&mut buffer, input).unwrap();
+            eprintln!("{}", buffer);
         }
     }
 }
