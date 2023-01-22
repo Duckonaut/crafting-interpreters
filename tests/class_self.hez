@@ -1,0 +1,16 @@
+class A {
+    init(index) {
+        self.index = index;
+    }
+
+    access() {
+        return self.index;
+    }
+}
+
+for (var mut a = 0; a < 1000; a = a + 1) {
+    var obj = A(a);
+    obj.access();
+}
+
+println("SUCCESS");

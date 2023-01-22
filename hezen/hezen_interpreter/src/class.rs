@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{collections::HashMap, rc::Rc};
 
 use hezen_core::error::HezenError;
 
@@ -68,9 +68,7 @@ impl HezenCallable for Rc<HezenClass> {
 
             Ok(HezenValue::Instance(instance))
         } else {
-            Ok(HezenValue::Instance(
-                HezenInstanceHandle::new(self.clone()),
-            ))
+            Ok(HezenValue::Instance(HezenInstanceHandle::new(self.clone())))
         }
     }
 

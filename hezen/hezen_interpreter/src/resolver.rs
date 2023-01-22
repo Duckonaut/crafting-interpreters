@@ -72,7 +72,7 @@ impl<'a> Resolver<'a> {
     fn resolve_local(&mut self, name: &Token, expr: &Expr) {
         for (i, scope) in self.scopes.iter().rev().enumerate() {
             if scope.contains_key(&name.lexeme) {
-                self.interpreter.resolve(expr, i);
+                self.interpreter.resolve(name, i);
                 return;
             }
         }
@@ -92,8 +92,7 @@ impl<'a> Resolver<'a> {
 
             if let Stmt::Block(statements) = &**body {
                 self.internal_resolve(statements);
-            }
-            else {
+            } else {
                 self.errors.add(HezenError::runtime(
                     name.position.file.clone(),
                     name.position.line,

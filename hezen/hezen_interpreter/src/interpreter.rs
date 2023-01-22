@@ -41,7 +41,7 @@ pub(crate) enum HezenInterruption {
 pub struct Interpreter {
     pub globals: HezenEnvironmentHandle,
     environment: HezenEnvironmentHandle,
-    locals: HashMap<Expr, usize>,
+    pub locals: HashMap<Token, usize>,
 }
 
 macro_rules! binary_math_op {
@@ -159,6 +159,49 @@ impl Interpreter {
             false,
         );
 
+        globals.define(
+            Token::new(
+                TokenType::Builtin,
+                "mod".to_string(),
+                HezenLineInfo {
+                    line: 0,
+                    column: 0,
+                    file: "<builtin>".to_string(),
+                },
+            ),
+            HezenValue::NativeFunction(Rc::new(HezenNativeFunction::new(
+                Token::new(
+                    TokenType::Builtin,
+                    "print".to_string(),
+                    HezenLineInfo {
+                        line: 0,
+                        column: 0,
+                        file: "<builtin>".to_string(),
+                    },
+                ),
+                2,
+                |args| {
+                    if let (HezenValue::Number(left), HezenValue::Number(right)) =
+                        (args[0].clone(), args[1].clone())
+                    {
+                        Ok(HezenValue::Number(left % right))
+                    } else {
+                        Err(HezenError::runtime(
+                            "<builtin>".to_string(),
+                            0,
+                            0,
+                            format!(
+                                "Operands must be two numbers, not '{}' and '{}'",
+                                args[0].type_name(),
+                                args[1].type_name()
+                            ),
+                        ))
+                    }
+                },
+            ))),
+            false,
+        );
+
         Self {
             globals: globals.clone(),
             environment: globals,
@@ -166,8 +209,8 @@ impl Interpreter {
         }
     }
 
-    pub fn resolve(&mut self, expr: &Expr, depth: usize) {
-        self.locals.insert(expr.clone(), depth);
+    pub fn resolve(&mut self, token: &Token, depth: usize) {
+        self.locals.insert(token.clone(), depth);
     }
 
     pub fn interpret(&mut self, statements: &[Stmt]) -> Result<(), HezenError> {
@@ -177,7 +220,7 @@ impl Interpreter {
             if let Err(HezenInterruption::Error(error)) = result {
                 return Err(error);
             }
-            
+
             if let Err(HezenInterruption::Control(_)) = result {
                 panic!("Control flow should not be returned from the top level");
             }
@@ -357,14 +400,14 @@ impl Interpreter {
     pub(crate) fn evaluate(&mut self, expr: &Expr) -> Result<HezenValue, HezenError> {
         match expr {
             Expr::Assign(name, value) => {
-                if self.locals.contains_key(expr) {
+                if self.locals.contains_key(name) {
                     if self
                         .environment
-                        .mutable_at(*self.locals.get(expr).unwrap(), name)
+                        .mutable_at(*self.locals.get(name).unwrap(), name)
                     {
                         let value = self.evaluate(value)?;
                         self.environment
-                            .assign_at(*self.locals.get(expr).unwrap(), name, value)?;
+                            .assign_at(*self.locals.get(name).unwrap(), name, value)?;
                         Ok(HezenValue::Nil)
                     } else {
                         Err(HezenError::runtime(
@@ -573,7 +616,7 @@ impl Interpreter {
             }
             Expr::Self_(token) => self.get(token, expr),
             Expr::Super(s, accessor) => {
-                let distance = self.locals.get(expr).unwrap();
+                let distance = self.locals.get(s).unwrap();
 
                 let superclass = match self.environment.get_at(*distance, s) {
                     Ok(HezenValue::Class(class)) => class,
@@ -687,17 +730,10 @@ impl Interpreter {
     }
 
     fn get(&self, name: &Token, expr: &Expr) -> Result<HezenValue, HezenError> {
-        if let Some(distance) = self.locals.get(expr) {
+        if let Some(distance) = self.locals.get(name) {
             self.environment.get_at(*distance, name)
-        } else if let Ok(value) = self.globals.get(name) {
-            Ok(value)
         } else {
-            Err(HezenError::runtime(
-                name.position.file.clone(),
-                name.position.line,
-                name.position.column,
-                format!("Undefined variable '{}'", name.lexeme),
-            ))
+            self.globals.get(name)
         }
     }
 }

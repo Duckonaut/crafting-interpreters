@@ -28,7 +28,7 @@ fn main() -> Result<()> {
     match args.subcmd {
         Some(SubCommand::Run { file }) => run(file, verbosity)?,
         Some(SubCommand::Shell) => shell(),
-        None => run(Some("../classes-e2e.hez".into()), get_verbosity(None))?,
+        None => run(Some("/home/duckonaut/repos/crafting-interpreters/tests/classes.hez".into()), get_verbosity(None))?,
     }
 
     Ok(())

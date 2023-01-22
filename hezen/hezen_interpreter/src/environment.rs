@@ -61,7 +61,7 @@ impl HezenEnvironmentHandle {
             name.position.file.clone(),
             name.position.line,
             name.position.column,
-            format!("Undefined variable '{}'", name.lexeme),
+            format!("Undefined variable IN ENVIRONMENT ASSIGN '{}'", name.lexeme),
         ))
     }
 
@@ -78,7 +78,7 @@ impl HezenEnvironmentHandle {
             name.position.file.clone(),
             name.position.line,
             name.position.column,
-            format!("Undefined variable '{}'", name.lexeme),
+            format!("Undefined variable IN ENVIRONMENT GET '{}'", name.lexeme),
         ))
     }
 

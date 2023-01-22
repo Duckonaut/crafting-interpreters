@@ -146,7 +146,7 @@ impl std::hash::Hash for Token {
 
 impl PartialEq for Token {
     fn eq(&self, other: &Self) -> bool {
-        self.ty == other.ty && self.lexeme == other.lexeme
+        self.ty == other.ty && self.lexeme == other.lexeme && self.position == other.position
     }
 }
 
