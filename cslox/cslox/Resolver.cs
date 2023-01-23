@@ -249,6 +249,8 @@ namespace cslox
 
 		public object? VisitWhileStmtStmt(WhileStmt whilestmt)
 		{
+			Resolve(whilestmt.condition);
+			Resolve(whilestmt.then);
 			return null;
 		}
 

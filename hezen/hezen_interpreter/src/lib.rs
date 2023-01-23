@@ -49,6 +49,15 @@ pub fn run(filename: String, code: String, verbosity: Verbosity) -> Result<(), H
 
     resolver.resolve(&ast);
 
+    if verbosity.resolver {
+        for (local, dist) in interpreter.locals.iter() {
+            println!(
+                "{}: {}, at {}:{}",
+                local.lexeme, dist, local.position.line, local.position.column
+            );
+        }
+    }
+
     if !pre_run_errors.is_empty() {
         return Err(pre_run_errors);
     }

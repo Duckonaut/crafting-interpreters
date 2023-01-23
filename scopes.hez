@@ -10,16 +10,9 @@ var mut a = "global";
     }
 
     show_a();
+    println("???");
     a = "GET TROLLED";
+    println("???");
     var a = "block";
     show_a();
-}
-
-class Cum {
-    MARIO() {
-
-    }
-    GRONGER() {
-
-    }
 }

@@ -207,9 +207,9 @@ impl<'a> Resolver<'a> {
                 }
                 self.define(name);
             }
-            Stmt::While(_, _) => {
-                //self.resolve_expr(condition);
-                //self.resolve_stmt(body);
+            Stmt::While(condition, body) => {
+                self.resolve_expr(condition);
+                self.resolve_stmt(body);
             }
             Stmt::Break => {}
             Stmt::Continue => {}

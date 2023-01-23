@@ -202,6 +202,37 @@ impl Interpreter {
             false,
         );
 
+        globals.define(
+            Token::new(
+                TokenType::Builtin,
+                "show".to_string(),
+                HezenLineInfo {
+                    line: 0,
+                    column: 0,
+                    file: "<builtin>".to_string(),
+                },
+            ),
+            HezenValue::NativeFunction(Rc::new(HezenNativeFunction::new(
+                Token::new(
+                    TokenType::Builtin,
+                    "show".to_string(),
+                    HezenLineInfo {
+                        line: 0,
+                        column: 0,
+                        file: "<builtin>".to_string(),
+                    },
+                ),
+                1,
+                |args| {
+                    Ok(match args[0] {
+                        HezenValue::Nil => HezenValue::String("nil".to_string()),
+                        _ => HezenValue::String(args[0].to_string()),
+                    })
+                },
+            ))),
+            false,
+        );
+
         Self {
             globals: globals.clone(),
             environment: globals,
@@ -231,9 +262,10 @@ impl Interpreter {
 
     pub(crate) fn execute(&mut self, stmt: &Stmt) -> Result<HezenValue, HezenInterruption> {
         match stmt {
-            Stmt::Block(stmts) => {
-                self.execute_block(stmts.iter().collect(), self.environment.clone())
-            }
+            Stmt::Block(stmts) => self.execute_block(
+                stmts.iter().collect(),
+                HezenEnvironmentHandle::new(Some(self.environment.clone())),
+            ),
             Stmt::Class(name, superclass, methods) => {
                 let superclass = if let Some(superclass) = superclass {
                     match self

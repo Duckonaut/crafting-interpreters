@@ -9,7 +9,7 @@ struct Args {
     #[arg(short, long, help = "The verbosity level")]
     verbosity: Option<u8>,
     #[command(subcommand)]
-    subcmd: Option<SubCommand>,
+    subcmd: SubCommand,
 }
 
 #[derive(Parser, Clone, Debug)]
@@ -26,9 +26,8 @@ fn main() -> Result<()> {
     let verbosity = get_verbosity(args.verbosity);
 
     match args.subcmd {
-        Some(SubCommand::Run { file }) => run(file, verbosity)?,
-        Some(SubCommand::Shell) => shell(),
-        None => run(Some("/home/duckonaut/repos/crafting-interpreters/tests/classes.hez".into()), get_verbosity(None))?,
+        SubCommand::Run { file } => run(file, verbosity)?,
+        SubCommand::Shell => shell(),
     }
 
     Ok(())
@@ -38,14 +37,17 @@ fn get_verbosity(level: Option<u8>) -> Verbosity {
     let mut v = Verbosity {
         lexer: false,
         intermediate: false,
+        resolver: false,
     };
 
     if let Some(level) = level {
         if level > 0 {
             v.intermediate = true;
         }
-
         if level > 1 {
+            v.resolver = true;
+        }
+        if level > 2 {
             v.lexer = true;
         }
     }
