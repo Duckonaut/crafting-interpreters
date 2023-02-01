@@ -1,0 +1,23 @@
+fn add_three(a, b, c) {
+    return a + b + c;
+}
+
+fn add_three(a, b, c) {
+    return a + b + c;
+}
+
+fn curried_add_three(a) {
+    fn ca(b) {
+        fn cb(c) {
+            return a + b + c;
+        }
+        return cb;
+    }
+    return ca;
+}
+
+println("curried");
+println(add_three(1, 2, 3));
+println(curried_add_three(1)(2)(3));
+var partial = curried_add_three(1);
+println(partial(2)(3));

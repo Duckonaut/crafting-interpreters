@@ -64,7 +64,7 @@ fn run(file: Option<PathBuf>, verbosity: Verbosity) -> Result<()> {
         if let Err(err) = result {
             let mut buffer = String::new();
             err.print_details(&mut buffer, &*code).unwrap();
-            eprintln!("{}", buffer);
+            eprintln!("{buffer}");
         }
     } else {
         let stdin = std::io::stdin();
@@ -76,7 +76,7 @@ fn run(file: Option<PathBuf>, verbosity: Verbosity) -> Result<()> {
         if let Err(err) = result {
             let mut buffer = String::new();
             err.print_details(&mut buffer, &*code).unwrap();
-            eprintln!("{}", buffer);
+            eprintln!("{buffer}");
         }
     }
     Ok(())

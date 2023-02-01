@@ -109,11 +109,11 @@ impl<'a> Parser<'a> {
     }
 
     fn function_declaration(&mut self, kind: &str) -> ParseResult<Stmt> {
-        let name = self.consume(TokenType::Identifier, &format!("Expected {} name.", kind))?;
+        let name = self.consume(TokenType::Identifier, &format!("Expected {kind} name."))?;
 
         self.consume(
             TokenType::LeftParen,
-            &format!("Expected '(' after {} name.", kind),
+            &format!("Expected '(' after {kind} name."),
         )?;
 
         let mut parameters = Vec::new();

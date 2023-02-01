@@ -103,8 +103,8 @@ impl Display for TokenType {
             TokenType::Less => write!(f, "<"),
             TokenType::LessEqual => write!(f, "<="),
             TokenType::Identifier => write!(f, "identifier"),
-            TokenType::String(s) => write!(f, "\"{}\"", s),
-            TokenType::Number(n) => write!(f, "{}", n),
+            TokenType::String(s) => write!(f, "\"{s}\""),
+            TokenType::Number(n) => write!(f, "{n}"),
             TokenType::And => write!(f, "and"),
             TokenType::Class => write!(f, "class"),
             TokenType::Else => write!(f, "else"),
@@ -188,7 +188,7 @@ impl Tokens {
 impl Display for Tokens {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for token in self.list.iter() {
-            writeln!(f, "{}", token)?;
+            writeln!(f, "{token}")?;
         }
 
         Ok(())

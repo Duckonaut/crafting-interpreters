@@ -25,7 +25,7 @@ pub fn run(filename: String, code: String, verbosity: Verbosity) -> Result<(), H
     }
 
     if verbosity.lexer {
-        println!("Tokens: {}", tokens);
+        println!("Tokens: {tokens}");
     }
 
     let parser = parser::Parser::new(tokens, &mut pre_run_errors);
@@ -39,7 +39,7 @@ pub fn run(filename: String, code: String, verbosity: Verbosity) -> Result<(), H
     if verbosity.intermediate {
         println!("AST:");
         for node in ast.iter() {
-            println!("{}", node);
+            println!("{node}");
         }
     }
 
@@ -107,7 +107,7 @@ pub fn shell() {
         if !pre_run_errors.is_empty() {
             let mut buffer = String::new();
             pre_run_errors.print_details(&mut buffer, input).unwrap();
-            eprintln!("{}", buffer);
+            eprintln!("{buffer}");
             continue;
         }
 
@@ -118,7 +118,7 @@ pub fn shell() {
         if !pre_run_errors.is_empty() {
             let mut buffer = String::new();
             pre_run_errors.print_details(&mut buffer, input).unwrap();
-            eprintln!("{}", buffer);
+            eprintln!("{buffer}");
             continue;
         }
 
@@ -129,7 +129,7 @@ pub fn shell() {
         if !pre_run_errors.is_empty() {
             let mut buffer = String::new();
             pre_run_errors.print_details(&mut buffer, input).unwrap();
-            eprintln!("{}", buffer);
+            eprintln!("{buffer}");
             continue;
         }
 
@@ -138,7 +138,7 @@ pub fn shell() {
         if let Err(error) = result {
             let mut buffer = String::new();
             error.print_details(&mut buffer, input).unwrap();
-            eprintln!("{}", buffer);
+            eprintln!("{buffer}");
         }
     }
 }

@@ -248,9 +248,9 @@ impl Display for HezenValue {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             HezenValue::Nil => write!(f, "nil"),
-            HezenValue::Bool(b) => write!(f, "{}", b),
-            HezenValue::Number(n) => write!(f, "{}", n),
-            HezenValue::String(s) => write!(f, "{}", s),
+            HezenValue::Bool(b) => write!(f, "{b}"),
+            HezenValue::Number(n) => write!(f, "{n}"),
+            HezenValue::String(s) => write!(f, "{s}"),
             HezenValue::Function(hf) => write!(f, "<function {}>", hf.name.lexeme),
             HezenValue::Class(hc) => write!(f, "<class {}>", hc.name),
             HezenValue::Instance(hi) => write!(f, "<instance {}>", hi.type_name()),

@@ -93,7 +93,7 @@ impl Display for Expr {
             ),
             Expr::Get(object, name) => write!(f, "(get {} {})", object, name.lexeme),
             Expr::Grouping(expr) => write!(f, "{}", wrap_expr!("grouping", Some(expr))),
-            Expr::Literal(literal) => write!(f, "{}", literal),
+            Expr::Literal(literal) => write!(f, "{literal}"),
             Expr::Logical(left, op, right) => write!(
                 f,
                 "{}",
@@ -116,9 +116,9 @@ impl Display for Literal {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Literal::Nil => write!(f, "nil"),
-            Literal::Bool(b) => write!(f, "{}", b),
-            Literal::Number(n) => write!(f, "{}", n),
-            Literal::String(s) => write!(f, "\"{}\"", s),
+            Literal::Bool(b) => write!(f, "{b}"),
+            Literal::Number(n) => write!(f, "{n}"),
+            Literal::String(s) => write!(f, "\"{s}\""),
         }
     }
 }
@@ -136,13 +136,13 @@ impl Display for Stmt {
                 "(class name: {}{} {})",
                 name.lexeme,
                 if let Some(superclass) = superclass {
-                    format!(" superclass: {}", superclass)
+                    format!(" superclass: {superclass}")
                 } else {
                     "".to_string()
                 },
                 wrap_stmt_in_parentheses("methods", methods.iter().collect())
             ),
-            Stmt::Expression(expr) => write!(f, "{}", expr),
+            Stmt::Expression(expr) => write!(f, "{expr}"),
             Stmt::Function(name, params, body) => write!(
                 f,
                 "(function name: {}{} {})",
@@ -167,7 +167,7 @@ impl Display for Stmt {
                 condition,
                 then_branch,
                 if let Some(else_branch) = else_branch {
-                    format!(" else {}", else_branch)
+                    format!(" else {else_branch}")
                 } else {
                     "".to_string()
                 }
@@ -177,7 +177,7 @@ impl Display for Stmt {
                 "(var {}{})",
                 name.lexeme,
                 if let Some(initializer) = initializer {
-                    format!(" = {}", initializer)
+                    format!(" = {initializer}")
                 } else {
                     "".to_string()
                 }
@@ -187,17 +187,17 @@ impl Display for Stmt {
                 "(var mut {}{})",
                 name.lexeme,
                 if let Some(initializer) = initializer {
-                    format!(" = {}", initializer)
+                    format!(" = {initializer}")
                 } else {
                     "".to_string()
                 }
             ),
-            Stmt::While(condition, body) => write!(f, "(while {} {})", condition, body),
+            Stmt::While(condition, body) => write!(f, "(while {condition} {body})"),
             Stmt::Return(_, value) => write!(
                 f,
                 "(return{})",
                 if let Some(value) = value {
-                    format!(" {}", value)
+                    format!(" {value}")
                 } else {
                     "".to_string()
                 }

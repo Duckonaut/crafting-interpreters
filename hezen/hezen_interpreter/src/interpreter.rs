@@ -24,7 +24,7 @@ pub(crate) enum HezenControl {
 impl Display for HezenControl {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            HezenControl::Return(value) => write!(f, "return {}", value),
+            HezenControl::Return(value) => write!(f, "return {value}"),
             HezenControl::Break => write!(f, "break"),
             HezenControl::Continue => write!(f, "continue"),
         }
@@ -474,7 +474,7 @@ impl Interpreter {
                         } else if let (HezenValue::String(left), HezenValue::String(right)) =
                             (left.clone(), right.clone())
                         {
-                            Ok(HezenValue::String(format!("{}{}", left, right)))
+                            Ok(HezenValue::String(format!("{left}{right}")))
                         } else {
                             Err(HezenError::runtime(
                                 operator.position.file.clone(),
@@ -761,7 +761,7 @@ impl Interpreter {
         Ok(value)
     }
 
-    fn get(&self, name: &Token, expr: &Expr) -> Result<HezenValue, HezenError> {
+    fn get(&self, name: &Token, _expr: &Expr) -> Result<HezenValue, HezenError> {
         if let Some(distance) = self.locals.get(name) {
             self.environment.get_at(*distance, name)
         } else {

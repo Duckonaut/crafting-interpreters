@@ -103,15 +103,15 @@ impl HezenError {
         )?;
         let line = lines[info.line - 1];
         let line_num = info.line.to_string();
-        let line_num = format!("{: >1$} |", line_num, line_max_len).bright_blue();
+        let line_num = format!("{line_num: >line_max_len$} |").bright_blue();
 
         let padding = format!("{}{}", " ".repeat(line_num.len() - 1), "|".bright_blue());
 
-        writeln!(f, "{}", padding)?;
-        writeln!(f, "{} {}", line_num, line)?;
-        write!(f, "{}", padding)?;
+        writeln!(f, "{padding}")?;
+        writeln!(f, "{line_num} {line}")?;
+        write!(f, "{padding}")?;
         writeln!(f, "{}{}", " ".repeat(info.column), "^".bright_red())?;
-        writeln!(f, "{}", padding)
+        writeln!(f, "{padding}")
     }
 }
 
@@ -153,7 +153,7 @@ impl HezenErrorList {
 impl Display for HezenErrorList {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for error in &self.errors {
-            writeln!(f, "{}", error)?;
+            writeln!(f, "{error}")?;
         }
         Ok(())
     }
